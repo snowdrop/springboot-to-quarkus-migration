@@ -28,10 +28,10 @@ TODO: Add link to the documentation of the Migration tool explaining what todo, 
 
 Two migration paths are currently possible, depending on what you prefer todo. They share somme common tasks able to manipulate the maven pom, but they will diverge when dependencies will be involved like the java annotations proposed or code refactoring.
 
-| Target Platform | Compatibility layer with Spring                               | Effort estimated |
-|-----------------|---------------------------------------------------------------|------------------|
-| Quarkus         | No                                                            | High             |
-| Quarkus Spring  | [Yes](https://quarkus.io/blog/quarkus-for-spring-developers/) | Moderate         |
+| Target Platform                             | Compatibility layer with Spring                               | Effort estimated |
+|---------------------------------------------|---------------------------------------------------------------|------------------|
+| [Quarkus](#moving-to-quarkus)               | No                                                            | High             |
+| [Quarkus Spring](#moving-to-quarkus-spring) | [Yes](https://quarkus.io/blog/quarkus-for-spring-developers/) | Moderate         |
 
 ### Common steps
 

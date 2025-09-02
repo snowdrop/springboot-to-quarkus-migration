@@ -133,7 +133,9 @@ and to add the [Quarkus maven plugin](https://quarkus.io/guides/quarkus-maven-pl
 
 ### Moving to Quarkus Spring
 
-TODO
+The migration path that we will cover here allows you to leverage your existing Spring knowledge and even reuse significant portions of your code while gradually adopting Quarkus' native features. Different Quarkus extensions have been developed for that purpose and provide familiar annotations and patterns, reducing the initial learning curve and enabling an incremental migration strategy.
+
+**Important**: Some limitations currently exist as some of the Java Spring annotations have not been implemented or are irrelevant when running in Quarkus. Refer to the official Quarkus Spring guides to have a full picture of the story !  
 
 ### Moving to Quarkus
 

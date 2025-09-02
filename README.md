@@ -33,7 +33,7 @@ Two migration paths are currently possible, depending on what you prefer todo. T
 | Quarkus         | No                                                            | High             |
 | Quarkus Spring  | [Yes](https://quarkus.io/blog/quarkus-for-spring-developers/) | Moderate         |
 
-## Common steps
+### Common steps
 
 Verify first that the licensing model of your project allows to migrate your code to Quarkus 3.x which relies on Apache License 2 - [rule-compatibility-oss-license.md](rules/rule-compatibility-oss-license.md). If your Spring Boot project uses Apache License 2.0, MIT, or BSD licenses, migration to Quarkus is straightforward. For GPL or proprietary licenses, consult with legal counsel before proceeding.
 
@@ -43,7 +43,7 @@ Open the `pom.xml` file and verify that your project is not defined as a maven m
 
 We can now start the process and first update the pom.xml file as described hereafter
 
-### Replace the Spring Boot parent with the Quarkus BOM
+#### Replace the Spring Boot parent with the Quarkus BOM
 
 Open your project's pom.xml file and remove the section (see [rule-migrate-parent-pom-to-bom.md](rules/rule-migrate-parent-pom-to-bom.md)) encompassing the Spring Boot `<parent>` and `</parent>` tags.
 
@@ -71,7 +71,7 @@ Next declare under the `<dependencyManagement>/<dependencies>` tag a dependency 
 </dependencyManagement>
 ```
 
-### Set the Quarkus version
+#### Set the Quarkus version
 
 The `quarkus.platform.version` property should be declared (see [rule-migrate-set-quarkus-version.md](rules/rule-migrate-set-quarkus-version.md)) part of the `<properties>` tag and set using the following version.
 
@@ -81,7 +81,7 @@ The `quarkus.platform.version` property should be declared (see [rule-migrate-se
 </properties>
 ```
 
-### Change the Java version (optional)
+#### Change the Java version (optional)
 
 As the recommended version of Quarkus 3.x is Java >= 17, then you will have to update (see [rule-change-maven-compiler-version.md](rules/rule-change-maven-compiler-version.md) ) the `<maven.compiler.xxx>` properties to align the versions of the following properties.
 ```xml
@@ -91,7 +91,7 @@ As the recommended version of Quarkus 3.x is Java >= 17, then you will have to u
 </properties>
 ```
 
-### Replace the Spring Boot plugin with the Quarkus one
+#### Replace the Spring Boot plugin with the Quarkus one
 
 To fully benefit of the Quarkus features to compile your project, launch the quarkus mode, build an image, deploy, etc. then it is needed to remove the Spring Boot plugin (see [rule-change-migrate-springboot-plugin-to-quarkus-plugin.md](rules/rule-change-migrate-springboot-plugin-to-quarkus-plugin.md))from the pom.xml file
 
@@ -130,6 +130,14 @@ and to add the [Quarkus maven plugin](https://quarkus.io/guides/quarkus-maven-pl
     </plugins>
 </build>
 ```
+
+### Moving to Quarkus Spring
+
+TODO
+
+### Moving to Quarkus
+
+TODO
 
 TO BE CONTINUED !
 

@@ -2,6 +2,8 @@
 
 The document helps you to migrate your Spring Boot 3.x application to Quarkus 3.x.
 
+**Remark**: To validate guide and under the hood the rules it refers like the instructions, we selected initially as project: https://github.com/adampeer/spring-boot-todo-app. When new iterations of this guide will occur, then we will enrich the collection of the projects with Spring Boot Petclinic and more for each new starters integrated.
+
 ## Constraints
 
 *This section lists the technical constraints, limitations of the existing analysing tool and identify improvements and new rules to be developed in the future*
@@ -162,6 +164,10 @@ TO BE CONTINUED !
   - Quarkus: https://docs.openrewrite.org/recipes/quarkus
 
 ### Migration guide example 
+
+1. Spring Petclinic to Quarkus
+
+- https://javaetmoi.com/2025/04/spring-petclinic-sous-extensions-quarkus/
 
 1. Markus blog's posts
 

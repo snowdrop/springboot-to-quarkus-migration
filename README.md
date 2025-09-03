@@ -165,9 +165,9 @@ TO BE CONTINUED !
 
 ### Migration guide example 
 
-1. Spring Petclinic to Quarkus
+1. Spring Petclinic to Quarkus (french)
 
-- https://javaetmoi.com/2025/04/spring-petclinic-sous-extensions-quarkus/
+- Very valuable project as it covers more complex aspect of the migration and cover the move from Thymeleaf to Qute: https://javaetmoi.com/2025/04/spring-petclinic-sous-extensions-quarkus/
 
 1. Markus blog's posts
 

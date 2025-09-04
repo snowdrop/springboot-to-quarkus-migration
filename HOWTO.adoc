@@ -1,0 +1,11 @@
+== How to play with the guide
+
+To test and play with the rules/instructions of the README, execute the following commands:
+
+[source,bash]
+----
+# The following commands should be executed in your terminal to interact with this migration guide
+git clone https://github.com/snowdrop/spring-boot-todo-app.git
+cd spring-boot-todo-app.git
+----
+

@@ -1,0 +1,8 @@
+java -jar target/quarkus-app/quarkus-run.jar analyze \
+        --jdt-ls-path /Users/cmoullia/code/application-modernisation/spring-to-quarkus-guide/lsp/jdt/konveyor-jdtls \
+        --jdt-workspace=/Users/cmoullia/code/application-modernisation/spring-to-quarkus-guide/lsp/jdt \
+        --rules=/Users/cmoullia/code/application-modernisation/spring-to-quarkus-guide/java-analyzer-cli/rules \
+        applications/spring-boot-todo-app
+
+set -gx PARAMS "--jdt-ls-path /Users/cmoullia/code/application-modernisation/spring-to-quarkus-guide/lsp/jdt/konveyor-jdtls --jdt-workspace /Users/cmoullia/code/application-modernisation/spring-to-quarkus-guide/lsp/jdt -r /Users/cmoullia/code/application-modernisation/spring-to-quarkus-guide/java-analyzer-cli/rules"
+mvn quarkus:dev -Dquarkus.args="analyze $PARAMS ./applications/spring-boot-todo-app"

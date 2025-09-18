@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 
 public class FileUtils {
     private static final Logger logger = Logger.getLogger(FileUtils.class.getName());
@@ -22,7 +22,7 @@ public class FileUtils {
         if (tempDir == null) {
             tempDir = Files.createTempDirectory("lsp");
         }
-        logger.info("Project path: " + tempDir.toString());
+        logger.infof("Project path: %s", tempDir.toString());
         return tempDir;
     }
 }

@@ -12,8 +12,7 @@ import org.eclipse.lsp4j.InitializedParams;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.eclipse.lsp4j.launch.LSPLauncher;
 import org.eclipse.lsp4j.services.LanguageServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,8 +33,7 @@ import static dev.snowdrop.lsp.common.utils.YamlRuleParser.parseRulesFromFolder;
 
 @ApplicationScoped
 public class JdtlsAndClient {
-
-    private static final Logger logger = LoggerFactory.getLogger(JdtlsAndClient.class);
+    private static final Logger logger = Logger.getLogger(JdtlsAndClient.class);
     private static final long TIMEOUT = 30000;
     public static String LS_CMD;
 
@@ -63,13 +61,13 @@ public class JdtlsAndClient {
         p.setCapabilities(new ClientCapabilities());
 
         String bundlePath = String.format("[\"%s\"]", Paths.get(jdtLsPath, "java-analyzer-bundle", "java-analyzer-bundle.core", "target", "java-analyzer-bundle.core-1.0.0-SNAPSHOT.jar"));
-        logger.info("bundle path is {}", bundlePath);
+        logger.infof("bundle path is %s", bundlePath);
 
         String json = String.format("""
             {
                "bundles": %s
             }""", bundlePath);
-        logger.info("initializationOptions {}", json);
+        logger.infof("initializationOptions: %s", json);
 
         Object initializationOptions = new Gson().fromJson(json, JsonObject.class);
         p.setInitializationOptions(initializationOptions);
@@ -139,11 +137,11 @@ public class JdtlsAndClient {
             .orElse("java.project.getAll");
 
         // Log resolved paths for debugging
-        logger.info("Resolved JDT_LS_PATH: {}", jdtLsPath);
-        logger.info("Resolved JDT_WKS: {}", jdtWks);
-        logger.info("Resolved APP_PATH: {}", appPath);
-        logger.info("Resolved RULES_PATH: {}", rulesPath);
-        logger.info("LS_CMD: {}", lsCmd);
+        logger.infof("Resolved JDT_LS_PATH: %s", jdtLsPath);
+        logger.infof("Resolved JDT_WKS: %s", jdtWks);
+        logger.infof("Resolved APP_PATH: %s", appPath);
+        logger.infof("Resolved RULES_PATH: %s", rulesPath);
+        logger.infof("LS_CMD: %s", lsCmd);
     }
 
     private Path resolvePath(String pathString) {
@@ -199,11 +197,11 @@ public class JdtlsAndClient {
 
         try {
             process = pb.start();
-            logger.info("====== Language Server Process id: {} ====== ", process.info());
-            logger.info("====== jdt ls started =======");
-            logger.info("====== Workspace project directory: {} ======", wksDir);
+            logger.infof("====== Language Server Process id: %s ====== ", process.info());
+            logger.infof("====== jdt ls started =======");
+            logger.infof("====== Workspace project directory: %s ======", wksDir);
         } catch (IOException exception) {
-            logger.error("====== Failed to create process :{}", String.valueOf(exception));
+            logger.errorf("====== Failed to create process :%s", String.valueOf(exception));
             System.exit(1);
         }
 

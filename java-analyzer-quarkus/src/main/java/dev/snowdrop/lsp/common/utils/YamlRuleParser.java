@@ -4,8 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import dev.snowdrop.lsp.model.Rule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -15,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class YamlRuleParser {
-    private static final Logger logger = LoggerFactory.getLogger(YamlRuleParser.class);
+    private static final Logger logger = Logger.getLogger(YamlRuleParser.class);
     private static final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
@@ -24,7 +23,7 @@ public class YamlRuleParser {
     }
 
     public static Rule parseRuleFromFile(Path filePath) throws IOException {
-        logger.debug("Parsing YAML rule from file: {}", filePath);
+        logger.debugf("Parsing YAML rule from file: {}", filePath);
         try {
             return yamlMapper.readValue(Files.newInputStream(filePath), Rule.class);
         } catch (IOException e) {
@@ -34,7 +33,7 @@ public class YamlRuleParser {
     }
 
     public static List<Rule> parseRulesFromFile(Path filePath) throws IOException {
-        logger.debug("Parsing YAML rules list from file: {}", filePath);
+        logger.debugf("Parsing YAML rules list from file: {}", filePath);
         try {
             return yamlMapper.readValue(Files.newInputStream(filePath),
                 yamlMapper.getTypeFactory().constructCollectionType(List.class, Rule.class));
@@ -45,7 +44,7 @@ public class YamlRuleParser {
     }
 
     public void writeRuleToFile(Rule rule, Path filePath) throws IOException {
-        logger.debug("Writing YAML rule to file: {}", filePath);
+        logger.debugf("Writing YAML rule to file: {}", filePath);
         try {
             yamlMapper.writeValue(Files.newOutputStream(filePath), rule);
         } catch (IOException e) {
@@ -55,7 +54,7 @@ public class YamlRuleParser {
     }
 
     public String ruleToYamlString(Rule rule) throws IOException {
-        logger.debug("Converting rule to YAML string");
+        logger.debugf("Converting rule to YAML string");
         try {
             return yamlMapper.writeValueAsString(rule);
         } catch (IOException e) {
@@ -69,7 +68,7 @@ public class YamlRuleParser {
     }
 
     public static  List<Rule> parseRulesFromFolder(Path folderPath, boolean recursive) throws IOException {
-        logger.debug("Parsing YAML rules from folder: {} (recursive: {})", folderPath, recursive);
+        logger.debugf("Parsing YAML rules from folder: {} (recursive: {})", folderPath, recursive);
 
         if (!Files.exists(folderPath)) {
             throw new IOException("Folder does not exist: " + folderPath);
@@ -87,7 +86,7 @@ public class YamlRuleParser {
             parseRulesFromDirectFolder(folderPath, rules);
         }
 
-        logger.debug("Parsed {} rules from folder: {}", rules.size(), folderPath);
+        logger.debugf("Parsed {} rules from folder: {}", rules.size(), folderPath);
         return rules;
     }
 
@@ -100,9 +99,9 @@ public class YamlRuleParser {
                     try {
                         List<Rule> fileRules = parseRulesFromFile(entry);
                         rules.addAll(fileRules);
-                        logger.debug("Successfully parsed {} rules from: {}", fileRules.size(), entry);
+                        logger.debugf("Successfully parsed {} rules from: {}", fileRules.size(), entry);
                     } catch (IOException e) {
-                        logger.warn("Failed to parse rules from file: {} - {}", entry, e.getMessage());
+                        logger.warnf("Failed to parse rules from file: {} - {}", entry, e.getMessage());
                     }
                 }
             }
@@ -115,9 +114,9 @@ public class YamlRuleParser {
                 try {
                     List<Rule> fileRules = parseRulesFromFile(yamlFile);
                     rules.addAll(fileRules);
-                    logger.debug("Successfully parsed {} rules from: {}", fileRules.size(), yamlFile);
+                    logger.debugf("Successfully parsed {} rules from: {}", fileRules.size(), yamlFile);
                 } catch (IOException e) {
-                    logger.warn("Failed to parse rule from file: {} - {}", yamlFile, e.getMessage());
+                    logger.warnf("Failed to parse rule from file: {} - {}", yamlFile, e.getMessage());
                 }
             }
         }

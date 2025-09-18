@@ -1,5 +1,6 @@
 package dev.snowdrop.lsp.common.utils;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import dev.snowdrop.lsp.model.Rule;
@@ -15,7 +16,9 @@ import java.util.List;
 
 public class YamlRuleParser {
     private static final Logger logger = LoggerFactory.getLogger(YamlRuleParser.class);
-    private static final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
+    private static final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
 
     public YamlRuleParser() {
     }

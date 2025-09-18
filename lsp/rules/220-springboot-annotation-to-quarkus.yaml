@@ -17,9 +17,13 @@
     also need to maintain a Spring version along with the Quarkus application."
   ruleID: springboot-annotations-to-quarkus-00000
   when:
-    java.referenced:
-      location: ANNOTATION
-      pattern: org.springframework.boot.autoconfigure.SpringBootApplication
+    or:
+    - java.referenced:
+        location: ANNOTATION
+        pattern: org.springframework.boot.autoconfigure.SpringBootApplication
+    - java.referenced:
+        location: IMPORT
+        pattern: org.springframework.boot.autoconfigure.SpringBootApplication
   actions:
-    - Remove the SpringBoot @SpringBootApplication annotation from classes
-    - Remove the imported class: org.springframework.boot.autoconfigure.SpringBootApplication
+    - "Remove the SpringBoot @SpringBootApplication annotation from classes"
+    - "Remove the imported class: org.springframework.boot.autoconfigure.SpringBootApplication"

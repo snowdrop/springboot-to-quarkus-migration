@@ -14,7 +14,7 @@ public record Rule(
     String ruleID,
     String lsCmd,
     When when,
-    List<String> actions
+    @JsonProperty("actions") List<String> actions
 ) {
 
     public Rule withLsCmd(String lsCmd) {
@@ -22,11 +22,17 @@ public record Rule(
     }
 
     public record When(
-        @JsonProperty("java.referenced") JavaReferenced javaReferenced
+        @JsonProperty("java.referenced") JavaReferenced javaReferenced,
+        @JsonProperty("or") List<WhenCondition> or,
+        @JsonProperty("and") List<WhenCondition> and
     ) {}
 
     public record JavaReferenced(
         String location,
         String pattern
+    ) {}
+
+    public record WhenCondition(
+        @JsonProperty("java.referenced") JavaReferenced javaReferenced
     ) {}
 }

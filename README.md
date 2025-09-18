@@ -48,7 +48,10 @@ At the condition that you have installed Java 17 - [rule-presence-java.md](rules
 
 Open the `pom.xml` file and verify that your project is not defined as a maven multi-modules project - [rule-multi-maven-modules.md](rules/rule-multi-maven-modules.md). If this is the case, then you will have to perform different steps manually as the tool don't support (yet) such a structure !
 
-We can now start the process and first update the pom.xml file as described hereafter
+We can now start the process using a simple decision tree or flowchart that we will follow in order to take different decisions based on conditions defined within rules
+and validated.
+
+[spring-to-quarkus.mmd](diagrams/spring-to-quarkus.mmd)
 
 #### Replace the Spring Boot parent with the Quarkus BOM
 

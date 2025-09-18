@@ -83,7 +83,7 @@ public class JdtlsAndClient {
 
         List<Rule> rules = parseRulesFromFolder(RULES_PATH);
         for (Rule rule : rules) {
-                executeLsCmd(future, remoteProxy, rule.withLsCmd(cmd));
+            executeLsCmd(future, remoteProxy, rule.withLsCmd(cmd));
         }
     }
 
@@ -161,13 +161,14 @@ public class JdtlsAndClient {
 
         try {
             process = pb.start();
-            logger.info("Language Server Process id: {}", process.info());
-            logger.info("jdt ls started");
-            logger.info("Workspace project directory: {}", wksDir);
+            logger.info("====== Language Server Process id: {} ====== ", process.info());
+            logger.info("====== jdt ls started =======");
+            logger.info("====== Workspace project directory: {} ======", wksDir);
         } catch (IOException exception) {
-            logger.error("Failed to create process :" + exception);
+            logger.error("====== Failed to create process :{}", String.valueOf(exception));
             System.exit(1);
         }
+
     }
 
     private static void executeLsCmd(CompletableFuture<InitializeResult> future, LanguageServer remoteProxy, Rule rule) {

@@ -53,6 +53,21 @@ and validated.
 
 [spring-to-quarkus.mmd](diagrams/spring-to-quarkus.mmd)
 
+```mermaid
+flowchart TD
+    A["Start"] --> B{"Do you want to convert your project from Spring to Quarkus?"}
+    B -- No --> C["Exit"]
+    B -- Yes --> D["Check if the java project uses the Spring Boot framework"]
+    D --> E{"Does the code include the annotation @SpringBootApplication?"}
+    E -- Yes --> F["This is a Spring project - proceed with conversion"]
+    E -- No --> G["This is not a Spring project - cannot convert to Quarkus"]
+    F --> H["End"]
+    G --> H
+    C --> H
+
+    style B stroke:#424242,fill:#00C853,color:#FFFFFF,stroke-width:4px,stroke-dasharray: 0
+```
+
 #### Replace the Spring Boot parent with the Quarkus BOM
 
 Open your project's pom.xml file and remove the section (see [rule-migrate-parent-pom-to-bom.md](rules/rule-migrate-parent-pom-to-bom.md)) encompassing the Spring Boot `<parent>` and `</parent>` tags.

@@ -102,25 +102,47 @@ public class JdtlsAndClient {
     }
 
     private static void initProperties() {
-        JDT_LS_PATH = Optional
+        String jdtLsPath = Optional
             .ofNullable(System.getProperty("JDT_LS_PATH"))
             .orElseThrow(() -> new RuntimeException("JDT_LS_PATH system property is missing !"));
+        JDT_LS_PATH = resolvePath(jdtLsPath).toString();
 
-        JDT_WKS = Optional
+        String jdtWks = Optional
             .ofNullable(System.getProperty("JDT_WKS"))
             .orElseThrow(() -> new RuntimeException("JDT_WKS system property is missing !"));
+        JDT_WKS = resolvePath(jdtWks).toString();
 
-        APP_PATH = Optional
+        String appPath = Optional
             .ofNullable(System.getProperty("APP_PATH"))
             .orElse("applications/spring-boot-todo-app");
+        APP_PATH = resolvePath(appPath).toString();
 
-        RULES_PATH = Paths.get(Optional
+        String rulesPath = Optional
             .ofNullable(System.getProperty("RULES_PATH"))
-            .orElse(Paths.get(System.getProperty("user.dir"), "rules").toString()));
+            .orElse("rules");
+        RULES_PATH = resolvePath(rulesPath);
 
         LS_CMD = Optional
             .ofNullable(System.getProperty("LS_CMD"))
             .orElse("java.project.getAll");
+
+        // Log resolved paths for debugging
+        logger.info("Resolved JDT_LS_PATH: {}", JDT_LS_PATH);
+        logger.info("Resolved JDT_WKS: {}", JDT_WKS);
+        logger.info("Resolved APP_PATH: {}", APP_PATH);
+        logger.info("Resolved RULES_PATH: {}", RULES_PATH);
+        logger.info("LS_CMD: {}", LS_CMD);
+    }
+
+    private static Path resolvePath(String pathString) {
+        Path path = Paths.get(pathString);
+        if (path.isAbsolute()) {
+            return path;
+        } else {
+            // Resolve relative paths from current working directory
+            Path currentDir = Paths.get(System.getProperty("user.dir"));
+            return currentDir.resolve(pathString).normalize().toAbsolutePath();
+        }
     }
 
     private static void launchLsProcess() {

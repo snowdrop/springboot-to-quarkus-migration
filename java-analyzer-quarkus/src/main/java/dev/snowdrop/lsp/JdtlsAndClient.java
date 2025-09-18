@@ -37,10 +37,6 @@ public class JdtlsAndClient {
 
     private static final Logger logger = LoggerFactory.getLogger(JdtlsAndClient.class);
     private static final long TIMEOUT = 30000;
-    private static String JDT_LS_PATH;
-    private static String JDT_WKS;
-    private static String APP_PATH;
-    private static Path RULES_PATH;
     public static String LS_CMD;
 
     private Process process = null;
@@ -92,7 +88,7 @@ public class JdtlsAndClient {
     }
 
     public static void main(String[] args) throws Exception {
-        // Legacy main method for standalone execution
+        // TODO: Check why no messages are logged !
         JdtlsAndClient client = new JdtlsAndClient();
         client.initializeAndAnalyze();
     }
@@ -118,25 +114,47 @@ public class JdtlsAndClient {
     }
 
     private void initProperties() {
-        jdtLsPath = Optional
+        String jdtLsPathString = Optional
             .ofNullable(System.getProperty("JDT_LS_PATH"))
             .orElseThrow(() -> new RuntimeException("JDT_LS_PATH system property is missing !"));
+        jdtLsPath = resolvePath(jdtLsPathString).toString();
 
-        jdtWks = Optional
+        String jdtWksString = Optional
             .ofNullable(System.getProperty("JDT_WKS"))
             .orElseThrow(() -> new RuntimeException("JDT_WKS system property is missing !"));
+        jdtWks = resolvePath(jdtWksString).toString();
 
-        appPath = Optional
+        String appPathString = Optional
             .ofNullable(System.getProperty("APP_PATH"))
             .orElse("applications/spring-boot-todo-app");
+        appPath = resolvePath(appPathString).toString();
 
-        rulesPath = Paths.get(Optional
+        String rulesPathString = Optional
             .ofNullable(System.getProperty("RULES_PATH"))
-            .orElse(Paths.get(System.getProperty("user.dir"), "rules").toString()));
+            .orElse("rules");
+        rulesPath = resolvePath(rulesPathString);
 
         lsCmd = Optional
             .ofNullable(System.getProperty("LS_CMD"))
             .orElse("java.project.getAll");
+
+        // Log resolved paths for debugging
+        logger.info("Resolved JDT_LS_PATH: {}", jdtLsPath);
+        logger.info("Resolved JDT_WKS: {}", jdtWks);
+        logger.info("Resolved APP_PATH: {}", appPath);
+        logger.info("Resolved RULES_PATH: {}", rulesPath);
+        logger.info("LS_CMD: {}", lsCmd);
+    }
+
+    private Path resolvePath(String pathString) {
+        Path path = Paths.get(pathString);
+        if (path.isAbsolute()) {
+            return path;
+        } else {
+            // Resolve relative paths from current working directory
+            Path currentDir = Paths.get(System.getProperty("user.dir"));
+            return currentDir.resolve(pathString).normalize().toAbsolutePath();
+        }
     }
 
     private void launchLsProcess() {

@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -138,13 +137,39 @@ public class AnalyzeCommand implements Runnable {
 
     private void startJdtAnalysis(Path projectPath) throws Exception {
         logger.info("\n🚀 Starting JDT Language Server analysis...");
-        logger.info("📋 Configuration: JDT-LS path: {}, Workspace: {}, Rules: {}", jdtLsPath, jdtWorkspace, rulesPath);
+        logger.info("📋 Raw Configuration: JDT-LS path: {}, Workspace: {}, Rules: {}", jdtLsPath, jdtWorkspace, rulesPath);
+
+        // Validate input values
+        if (jdtLsPath == null) {
+            throw new Exception("JDT-LS path is null");
+        }
+        if (jdtWorkspace == null) {
+            throw new Exception("JDT workspace path is null");
+        }
+        if (rulesPath == null) {
+            throw new Exception("Rules path is null");
+        }
+        if (projectPath == null) {
+            throw new Exception("Project path is null");
+        }
+
+        // Resolve paths before setting system properties
+        String resolvedJdtLsPath = resolvePath(jdtLsPath).toString();
+        String resolvedJdtWorkspace = resolvePath(jdtWorkspace).toString();
+        String resolvedProjectPath = resolvePath(projectPath.toString()).toString();
+        String resolvedRulesPath = resolvePath(rulesPath).toString();
+
+        // Log resolved paths for debugging
+        logger.info("📋 Resolved JDT-LS path: {}", resolvedJdtLsPath);
+        logger.info("📋 Resolved workspace: {}", resolvedJdtWorkspace);
+        logger.info("📋 Resolved project path: {}", resolvedProjectPath);
+        logger.info("📋 Resolved rules path: {}", resolvedRulesPath);
 
         // Set system properties for JDT-LS
-        System.setProperty("JDT_LS_PATH", jdtLsPath);
-        System.setProperty("JDT_WKS", jdtWorkspace);
-        System.setProperty("APP_PATH", projectPath.toString());
-        System.setProperty("RULES_PATH", rulesPath);
+        System.setProperty("JDT_LS_PATH", resolvedJdtLsPath);
+        System.setProperty("JDT_WKS", resolvedJdtWorkspace);
+        System.setProperty("APP_PATH", resolvedProjectPath);
+        System.setProperty("RULES_PATH", resolvedRulesPath);
 
         // Set LS_CMD in JdtlsAndClient from configuration
         JdtlsAndClient.LS_CMD = lsCommand;
@@ -197,10 +222,10 @@ public class AnalyzeCommand implements Runnable {
 
     private List<Rule> loadRules() {
         try {
-            YamlRuleParser parser = new YamlRuleParser();
-            File rulesDir = new File(rulesPath);
+            String resolvedRulesPath = System.getProperty("RULES_PATH");
+            File rulesDir = new File(resolvedRulesPath);
             if (!rulesDir.exists()) {
-                logger.error("⚠️  Rules directory not found: {}", rulesPath);
+                logger.error("⚠️  Rules directory not found: {}", resolvedRulesPath);
                 return List.of();
             }
 
@@ -272,17 +297,40 @@ public class AnalyzeCommand implements Runnable {
     }
 
     private void launchJdtProcess() throws Exception {
-        Path wksDir = Paths.get(jdtWorkspace);
+        // Use resolved paths from system properties
+        String resolvedJdtLsPath = System.getProperty("JDT_LS_PATH");
+        String resolvedJdtWorkspace = System.getProperty("JDT_WKS");
+
+        logger.info("📋 Launching JDT with resolved paths - LS: {}, Workspace: {}", resolvedJdtLsPath, resolvedJdtWorkspace);
+
+        Path wksDir = Paths.get(resolvedJdtWorkspace);
 
         String os = System.getProperty("os.name").toLowerCase();
-        Path configPath = os.contains("win") ? Paths.get(jdtLsPath, "config_win") :
-            os.contains("mac") ? Paths.get(jdtLsPath, "config_mac_arm") :
-                Paths.get(jdtLsPath, "config_linux");
+        logger.info("📋 Detected OS: {}", os);
 
-        String launcherJar = Objects
-            .requireNonNull(
-                new File(jdtLsPath, "plugins")
-                    .listFiles((dir, name) -> name.startsWith("org.eclipse.equinox.launcher_")))[0].getName();
+        Path configPath = os.contains("win") ? Paths.get(resolvedJdtLsPath, "config_win") :
+            os.contains("mac") ? Paths.get(resolvedJdtLsPath, "config_mac_arm") :
+                Paths.get(resolvedJdtLsPath, "config_linux");
+
+        logger.info("📋 Config path: {}", configPath);
+
+        if (!configPath.toFile().exists()) {
+            throw new Exception("JDT-LS config directory does not exist: " + configPath);
+        }
+
+        // Check plugins directory
+        File pluginsDir = new File(resolvedJdtLsPath, "plugins");
+        if (!pluginsDir.exists()) {
+            throw new Exception("JDT-LS plugins directory does not exist: " + pluginsDir.getAbsolutePath());
+        }
+
+        File[] launcherFiles = pluginsDir.listFiles((dir, name) -> name.startsWith("org.eclipse.equinox.launcher_"));
+        if (launcherFiles == null || launcherFiles.length == 0) {
+            throw new Exception("No equinox launcher jar found in plugins directory: " + pluginsDir.getAbsolutePath());
+        }
+
+        String launcherJar = launcherFiles[0].getName();
+        logger.info("📋 Using launcher jar: {}", launcherJar);
 
         ProcessBuilder pb = new ProcessBuilder(
             "java",
@@ -299,7 +347,7 @@ public class AnalyzeCommand implements Runnable {
             "--add-modules=ALL-SYSTEM",
             "--add-opens", "java.base/java.util=ALL-UNNAMED",
             "--add-opens", "java.base/java.lang=ALL-UNNAMED",
-            "-jar", Paths.get(jdtLsPath, "plugins", launcherJar).toString(),
+            "-jar", Paths.get(resolvedJdtLsPath, "plugins", launcherJar).toString(),
             "-configuration", configPath.toString(),
             "-data", wksDir.resolve(".jdt_workspace").toString()
         );
@@ -349,8 +397,9 @@ public class AnalyzeCommand implements Runnable {
         p.setRootUri(FileUtils.getApplicationDir(projectPath.toString()).toUri().toString());
         p.setCapabilities(new ClientCapabilities());
 
+        String resolvedJdtLsPath = System.getProperty("JDT_LS_PATH");
         String bundlePath = String.format("[\"%s\"]",
-            Paths.get(jdtLsPath, "java-analyzer-bundle", "java-analyzer-bundle.core", "target", "java-analyzer-bundle.core-1.0.0-SNAPSHOT.jar"));
+            Paths.get(resolvedJdtLsPath, "java-analyzer-bundle", "java-analyzer-bundle.core", "target", "java-analyzer-bundle.core-1.0.0-SNAPSHOT.jar"));
 
         String json = String.format("""
             {
@@ -368,5 +417,24 @@ public class AnalyzeCommand implements Runnable {
 
         logger.info("✅ JDT Language Server initialized");
         return future;
+    }
+
+    private Path resolvePath(String pathString) {
+        logger.debug("📋 Resolving path: {}", pathString);
+
+        if (pathString == null) {
+            throw new IllegalArgumentException("Path string cannot be null");
+        }
+
+        Path path = Paths.get(pathString);
+        if (path.isAbsolute()) {
+            logger.debug("📋 Path is already absolute: {}", path);
+            return path;
+        } else {
+            // Resolve relative paths from user.dir
+            Path resolved = Paths.get(System.getProperty("user.dir"), pathString);
+            logger.debug("📋 Resolved relative path '{}' to: {}", pathString, resolved);
+            return resolved;
+        }
     }
 }

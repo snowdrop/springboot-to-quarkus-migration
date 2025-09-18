@@ -3,7 +3,11 @@ package dev.snowdrop.lsp;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import dev.snowdrop.lsp.common.utils.LSClient;
-import org.eclipse.lsp4j.*;
+import dev.snowdrop.lsp.model.Rule;
+import org.eclipse.lsp4j.ClientCapabilities;
+import org.eclipse.lsp4j.InitializeParams;
+import org.eclipse.lsp4j.InitializeResult;
+import org.eclipse.lsp4j.InitializedParams;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.eclipse.lsp4j.launch.LSPLauncher;
 import org.eclipse.lsp4j.services.LanguageServer;
@@ -14,7 +18,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 
 import static dev.snowdrop.lsp.common.services.LsSearchService.executeCmd;
 import static dev.snowdrop.lsp.common.utils.FileUtils.getApplicationDir;
+import static dev.snowdrop.lsp.common.utils.RuleUtils.getLocationCode;
+import static dev.snowdrop.lsp.common.utils.YamlRuleParser.parseRulesFromFolder;
 
 public class JdtlsAndClient {
 
@@ -30,6 +39,7 @@ public class JdtlsAndClient {
     private static String JDT_LS_PATH;
     private static String JDT_WKS;
     private static String APP_PATH;
+    private static Path RULES_PATH;
 
     private static Process process = null;
 
@@ -45,6 +55,10 @@ public class JdtlsAndClient {
         APP_PATH = Optional
             .ofNullable(System.getProperty("APP_PATH"))
             .orElse("applications/spring-boot-todo-app");
+
+        RULES_PATH = Paths.get(Optional
+            .ofNullable(System.getProperty("RULES_PATH"))
+            .orElse(Paths.get(System.getProperty("user.dir"), "rules").toString()));
 
         Path wksDir = Paths.get(JDT_WKS);
         logger.info("Created workspace project directory: {}", wksDir);
@@ -115,13 +129,13 @@ public class JdtlsAndClient {
         p.setRootUri(getApplicationDir(APP_PATH).toUri().toString());
         p.setCapabilities(new ClientCapabilities());
 
-        String bundlePath = String.format("[\"%s\"]",Paths.get(JDT_LS_PATH,"java-analyzer-bundle","java-analyzer-bundle.core","target","java-analyzer-bundle.core-1.0.0-SNAPSHOT.jar"));
+        String bundlePath = String.format("[\"%s\"]", Paths.get(JDT_LS_PATH, "java-analyzer-bundle", "java-analyzer-bundle.core", "target", "java-analyzer-bundle.core-1.0.0-SNAPSHOT.jar"));
         logger.info("bundle path is {}", bundlePath);
 
         String json = String.format("""
-        {
-           "bundles": %s
-        }""", bundlePath);
+            {
+               "bundles": %s
+            }""", bundlePath);
         logger.info("initializationOptions {}", json);
 
         Object initializationOptions = new Gson().fromJson(json, JsonObject.class);
@@ -137,45 +151,28 @@ public class JdtlsAndClient {
         String cmd = Optional.ofNullable(System.getProperty("LS_CMD")).orElse("java.project.getAll");
         logger.info("CLIENT: Sending the command '{}' ...", cmd);
 
-        // TODO: To be improved to pass the arguments using a json string or file
-        Map<String, Object> paramsMap = Map.of(
-            "project", "java", // hard coded value to java within the external-provider
-            "location", "4",
-            "query", "org.springframework.boot.autoconfigure.SpringBootApplication", // pattern to search: https://github.com/konveyor/analyzer-lsp/blob/942c196a2d4155cdbb1ae5556e0df490de923c98/external-providers/java-external-provider/pkg/java_external_provider/service_client.go#L125-L136
+        List<Rule> rules = parseRulesFromFolder(RULES_PATH);
+        for (Rule rule : rules) {
+            Rule updatedRule = rule.withLsCmd(cmd);
+            executeLsCmd(future, remoteProxy, updatedRule);
+        }
+    }
+
+    private static void executeLsCmd(CompletableFuture<InitializeResult> future, LanguageServer remoteProxy, Rule rule) {
+        var paramsMap = Map.of(
+            "project", "java", // hard coded value to java within the analyzer java external-provider
+            "location", getLocationCode(rule.when().javaReferenced().location()),
+            "query", rule.when().javaReferenced().pattern(), // pattern from the rule
             "analysisMode", "source-only" // 2 modes are supported: source-only and full
         );
-
-        /*
-        location code
-	     "":                 0,
-	     "inheritance":      1,
-	     "method_call":      2,
-	     "constructor_call": 3,
-	     "annotation":       4,
-	     "implements_type":  5,
-	     // Not Implemented
-	     "enum":                 6,
-	     "return_type":          7,
-	     "import":               8,
-	     "variable_declaration": 9,
-	     "type":                 10,
-	     "package":              11,
-	     "field":                12,
-	     "method":               13,
-	     "class":                14,
-         */
 
         List<Object> cmdArguments = List.of(paramsMap);
 
         future
-            .thenRunAsync(() -> {
-                executeCmd(cmd, cmdArguments, remoteProxy);
-            })
-            .exceptionally(
-                t -> {
-                    t.printStackTrace();
-                    return null;
-                }
-            );
+            .thenRunAsync(() -> executeCmd(rule.lsCmd(), cmdArguments, remoteProxy))
+            .exceptionally(throwable -> {
+                logger.error("Error executing LS command for rule {}: {}", rule.ruleID(), throwable.getMessage(), throwable);
+                return null;
+            });
     }
 }

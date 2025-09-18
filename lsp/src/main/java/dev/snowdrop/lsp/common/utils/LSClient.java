@@ -1,7 +1,10 @@
 package dev.snowdrop.lsp.common.utils;
 
 
-import org.eclipse.lsp4j.*;
+import org.eclipse.lsp4j.MessageActionItem;
+import org.eclipse.lsp4j.MessageParams;
+import org.eclipse.lsp4j.PublishDiagnosticsParams;
+import org.eclipse.lsp4j.ShowMessageRequestParams;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +26,7 @@ public class LSClient implements LanguageClient {
 
     @Override
     public void showMessage(MessageParams messageParams) {
-        logger.info("CLIENT: Message from server: [{}] {}", messageParams.getType(), messageParams.getMessage());
+        logger.info("==== CLIENT: Message from server: [{}] {}", messageParams.getType(), messageParams.getMessage());
     }
 
     @Override
@@ -34,6 +37,6 @@ public class LSClient implements LanguageClient {
 
     @Override
     public void logMessage(MessageParams messageParams) {
-        logger.info("CLIENT: Log from server: [{}] {}", messageParams.getType(), messageParams.getMessage());
+        logger.info("==== CLIENT: Log from server: [{}] {}", messageParams.getType(), messageParams.getMessage());
     }
 }

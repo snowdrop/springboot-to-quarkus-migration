@@ -27,9 +27,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static dev.snowdrop.lsp.common.services.LsSearchService.executeCmd;
+import static dev.snowdrop.lsp.common.services.LsSearchService.executeLsCmd;
 import static dev.snowdrop.lsp.common.utils.FileUtils.getApplicationDir;
-import static dev.snowdrop.lsp.common.utils.RuleUtils.getLocationCode;
 import static dev.snowdrop.lsp.common.utils.YamlRuleParser.parseRulesFromFolder;
 
 public class JdtlsAndClient {
@@ -40,6 +39,7 @@ public class JdtlsAndClient {
     private static String JDT_WKS;
     private static String APP_PATH;
     private static Path RULES_PATH;
+    public static String LS_CMD;
 
     private static Process process = null;
     private static LanguageServer remoteProxy;
@@ -77,13 +77,10 @@ public class JdtlsAndClient {
         InitializedParams initialized = new InitializedParams();
         remoteProxy.initialized(initialized);
 
-        // Send by example the command java.project.getAll to the jdt-ls as it supports it
-        String cmd = Optional.ofNullable(System.getProperty("LS_CMD")).orElse("java.project.getAll");
-        logger.info("CLIENT: Sending the command '{}' ...", cmd);
-
+        // Parse the YAML rules to be tested against the project to be analyzed
         List<Rule> rules = parseRulesFromFolder(RULES_PATH);
         for (Rule rule : rules) {
-            executeLsCmd(future, remoteProxy, rule.withLsCmd(cmd));
+            executeLsCmd(future, remoteProxy, rule.withLsCmd(LS_CMD));
         }
     }
 
@@ -123,6 +120,10 @@ public class JdtlsAndClient {
         RULES_PATH = Paths.get(Optional
             .ofNullable(System.getProperty("RULES_PATH"))
             .orElse(Paths.get(System.getProperty("user.dir"), "rules").toString()));
+
+        LS_CMD = Optional
+            .ofNullable(System.getProperty("LS_CMD"))
+            .orElse("java.project.getAll");
     }
 
     private static void launchLsProcess() {
@@ -175,44 +176,5 @@ public class JdtlsAndClient {
             System.exit(1);
         }
 
-    }
-
-    private static void executeLsCmd(CompletableFuture<InitializeResult> future, LanguageServer remoteProxy, Rule rule) {
-
-        // Handle three cases: single java.referenced, OR conditions, AND conditions
-        if (rule.when().or() != null && !rule.when().or().isEmpty()) {
-            logger.info("Rule When includes: {} between java.referenced", "OR");
-            rule.when().or().forEach(condition ->
-                executeCommandForCondition(future, remoteProxy, rule, condition.javaReferenced())
-            );
-        } else if (rule.when().and() != null && !rule.when().and().isEmpty()) {
-            logger.info("Rule When includes: {} between java.referenced", "AND");
-            rule.when().and().forEach(condition ->
-                executeCommandForCondition(future, remoteProxy, rule, condition.javaReferenced())
-            );
-        } else if (rule.when().javaReferenced() != null) {
-            logger.info("Rule When includes: single java.referenced");
-            executeCommandForCondition(future, remoteProxy, rule, rule.when().javaReferenced());
-        } else {
-            logger.warn("Rule {} has no valid java.referenced conditions", rule.ruleID());
-        }
-    }
-
-    private static void executeCommandForCondition(CompletableFuture<InitializeResult> future, LanguageServer remoteProxy, Rule rule, Rule.JavaReferenced javaReferenced) {
-        var paramsMap = Map.of(
-            "project", "java", // hard coded value to java within the analyzer java external-provider
-            "location", getLocationCode(javaReferenced.location()),
-            "query", javaReferenced.pattern(), // pattern from the rule
-            "analysisMode", "source-only" // 2 modes are supported: source-only and full
-        );
-
-        List<Object> cmdArguments = List.of(paramsMap);
-
-        future
-            .thenRunAsync(() -> executeCmd(rule.lsCmd(), cmdArguments, remoteProxy))
-            .exceptionally(throwable -> {
-                logger.error("Error executing LS command for rule {}: {}", rule.ruleID(), throwable.getMessage(), throwable);
-                return null;
-            });
     }
 }

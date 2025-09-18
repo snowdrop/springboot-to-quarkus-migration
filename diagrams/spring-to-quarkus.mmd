@@ -1,0 +1,13 @@
+flowchart TD
+      A[Start] --> B{Do you want to convert your project from Spring to Quarkus?}
+      B -->|No| C[Exit]
+      B -->|Yes| D[Check if the project contains the annotation: @SpringBootApplication]
+      D --> E{Does code include @SpringBootApplication?}
+      E -->|Yes| F[This is a Spring project - proceed with conversion]
+      E -->|No| G[This is not a Spring project - cannot convert to Quarkus]
+      F --> H[End]
+      G --> H[End]
+      C --> H[End]
+    
+    style B stroke:#00C853,fill:#00C853,color:#FFFFFF
+

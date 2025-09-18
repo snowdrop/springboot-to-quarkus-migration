@@ -2,6 +2,7 @@
 
 # Spring Quarkus projects used for testing purpose
 spring-boot-todo-app/
+quarkus-todo-demo-app/
 
 target/
 pom.xml.tag

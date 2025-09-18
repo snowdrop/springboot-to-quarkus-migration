@@ -6,9 +6,9 @@ set -gx PARAMS "--jdt-ls-path jdt/konveyor-jdtls --jdt-workspace jdt -r rules"
 mvn quarkus:dev -Dquarkus.args="analyze $PARAMS applications/spring-boot-todo-app"
 
 java -jar target/quarkus-app/quarkus-run.jar analyze \
-        --jdt-ls-path ./lsp/jdt/konveyor-jdtls \
-        --jdt-workspace ./lsp/jdt \
-        -r ./rules \
+        --jdt-ls-path jdt/konveyor-jdtls \
+        --jdt-workspace jdt \
+        -r rules \
         applications/spring-boot-todo-app
 
 ## Java main

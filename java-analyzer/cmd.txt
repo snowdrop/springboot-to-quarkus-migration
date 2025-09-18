@@ -1,0 +1,10 @@
+mvn exec:java \
+  -DJDT_WKS=$HOME/code/application-modernisation/lsp \
+  -DJDT_LS_PATH=$HOME/code/application-modernisation/lsp/konveyor-jdtls \
+  -DLS_CMD=io.konveyor.tackle.ruleEntry
+
+mvn exec:java \
+  -DJDT_WKS=/Users/cmoullia/code/application-modernisation/spring-to-quarkus-guide/lsp/jdt \
+  -DJDT_LS_PATH=/Users/cmoullia/code/application-modernisation/spring-to-quarkus-guide/lsp/jdt/konveyor-jdtls \
+  -DLS_CMD=io.konveyor.tackle.ruleEntry
+

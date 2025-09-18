@@ -159,6 +159,12 @@ public class JdtlsAndClient {
         );
         pb.redirectErrorStream(true);
 
+        String javaHome = Optional.ofNullable(System.getProperty("JAVA_HOME"))
+            .orElse(System.getProperty("java.home"));
+
+        Map<String, String> env = pb.environment();
+        env.put("JAVA_HOME", javaHome);
+
         try {
             process = pb.start();
             logger.info("====== Language Server Process id: {} ====== ", process.info());

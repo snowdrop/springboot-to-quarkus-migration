@@ -86,13 +86,10 @@ public class JdtlsAndClient {
 
     // Create and launch the LS client able to talk to the LS server
     private static void createLaunchLsClient() {
-        ExecutorService executor;
-
-        logger.info("Connecting to the JDT Language Server ...");
-
-        executor = Executors.newSingleThreadExecutor();
+        ExecutorService executor = Executors.newSingleThreadExecutor();
         LSClient client = new LSClient();
 
+        logger.info("Connecting to the JDT Language Server ...");
         launcher = LSPLauncher.createClientLauncher(
             client,
             process.getInputStream(),

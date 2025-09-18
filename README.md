@@ -26,6 +26,11 @@ TODO: Add link to the documentation of the Migration tool explaining what todo, 
 - Apache Maven 3.9.x
 - Optionally: [Quarkus CLI](https://quarkus.io/guides/cli-tooling).
 
+## How to test and debug the rules
+
+This project provides a Quarkus CLI application able to analyze a java project and to validate it against the rules created.
+Look to the [README](lsp/README.md) of the lsp project to play with it !
+
 ## Migration path
 
 Two migration paths are currently possible, depending on what you prefer todo. They share somme common tasks able to manipulate the maven pom, but they will diverge when dependencies will be involved like the java annotations proposed or code refactoring.

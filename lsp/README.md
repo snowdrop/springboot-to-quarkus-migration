@@ -1,4 +1,4 @@
-# Instructions to play with Eclipse JDT-LS & Protocol
+# Instructions to play with Eclipse JDT-LS & the LS client
 
 This project demonstrates how to launch the Eclipse Java Language Server (aka: Eclipse jdt-ls) and access it using a Java Language client able to pass commands and get JSON responses converted to objects
 

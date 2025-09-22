@@ -2,29 +2,18 @@ package dev.snowdrop.commands;
 
 import dev.snowdrop.ls.JdtLsFactory;
 import dev.snowdrop.ls.model.JdtLSConfiguration;
-import dev.snowdrop.ls.utils.RuleUtils;
-import dev.snowdrop.ls.services.LsSearchService;
-import dev.snowdrop.ls.model.Rule;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
-import org.eclipse.lsp4j.*;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.lsp4j.jsonrpc.Launcher;
-import org.eclipse.lsp4j.services.LanguageServer;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 
 import static dev.snowdrop.ls.services.LsSearchService.analyzeCodeFromRule;
-import static dev.snowdrop.ls.services.LsSearchService.executeLsCmd;
-import static dev.snowdrop.ls.utils.FileUtils.resolvePath;
-import static dev.snowdrop.ls.utils.YamlRuleParser.parseRulesFromFolder;
 
 @CommandLine.Command(
     name = "analyze",
@@ -32,11 +21,7 @@ import static dev.snowdrop.ls.utils.YamlRuleParser.parseRulesFromFolder;
 )
 @ApplicationScoped
 public class AnalyzeCommand implements Runnable {
-
     private static final Logger logger = Logger.getLogger(AnalyzeCommand.class);
-
-    @Inject
-    JdtLSConfiguration jdtLSConfiguration;
 
     @CommandLine.Parameters(
         index = "0",
@@ -50,7 +35,7 @@ public class AnalyzeCommand implements Runnable {
         description = "Path to rules directory (default: from config)"
     )
     @ConfigProperty(name = "analyzer.rules.path", defaultValue = "./rules")
-    String rulesPath;
+    public String rulesPath;
 
     @CommandLine.Option(
         names = {"--jdt-ls-path"},
@@ -58,7 +43,7 @@ public class AnalyzeCommand implements Runnable {
         required = false
     )
     @ConfigProperty(name = "analyzer.jdt.ls.path", defaultValue = "./jdt/konveyor-jdtls")
-    String jdtLsPath;
+    public String jdtLsPath;
 
     @CommandLine.Option(
         names = {"--jdt-workspace"},
@@ -66,16 +51,10 @@ public class AnalyzeCommand implements Runnable {
         required = false
     )
     @ConfigProperty(name = "analyzer.jdt.workspace.path", defaultValue = "./jdt")
-    String jdtWorkspace;
+    public String jdtWorkspace;
 
     @ConfigProperty(name = "analyzer.jdt.ls.command", defaultValue = "java.project.getAll")
-    String lsCommand;
-
-    @CommandLine.Option(
-        names = {"-o", "--output"},
-        description = "Output format: text, json (default: text)"
-    )
-    private String outputFormat = "text";
+    public String lsCommand;
 
     @CommandLine.Option(
         names = {"-v", "--verbose"},
@@ -85,7 +64,6 @@ public class AnalyzeCommand implements Runnable {
 
     @Override
     public void run() {
-        // Validate project path
         Path path = Paths.get(appPath);
         if (!path.toFile().exists()) {
             logger.errorf("❌ Project path of the application does not exist: %s", appPath);
@@ -115,7 +93,7 @@ public class AnalyzeCommand implements Runnable {
 
         try {
             JdtLsFactory jdtLsFactory = new JdtLsFactory();
-            jdtLsFactory.initProperties();
+            jdtLsFactory.initProperties(this);
             jdtLsFactory.launchLsProcess();
             jdtLsFactory.createLaunchLsClient();
             jdtLsFactory.initLanguageServer();

@@ -6,13 +6,19 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import dev.snowdrop.ls.JdtLsFactory;
 import dev.snowdrop.ls.model.Rule;
-import org.eclipse.lsp4j.*;
+import org.eclipse.lsp4j.ExecuteCommandParams;
+import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.SymbolInformation;
+import org.eclipse.lsp4j.SymbolKind;
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.jboss.logging.Logger;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static dev.snowdrop.ls.utils.RuleUtils.getLocationCode;

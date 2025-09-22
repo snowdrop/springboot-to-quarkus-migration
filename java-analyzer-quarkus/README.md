@@ -47,17 +47,30 @@ osgi.bundles=...org.apache.commons.lang3_3.14.0.jar@4,reference\:file\:java-anal
 
 Copy the java-analyzer-bundle.core-1.0.0-SNAPSHOT.jar file from the path `konveyor-jdtls/java-analyzer-bundle/java-analyzer-bundle.core/target/` to the `plugins` folder
 
-## Start Jdt-ls and client
+## Start the language server and client using Quarkus CLI
 
-Before to run the server and client, configure the following properties:
-- `JDT_WKS`: Path if the folder containing the jdt-ls workspace, .metadata and log
-- `JDT_LS_PATH`: Path of the jdt-ls folder
-- `LS_CMD`: Language server command to be executed. Example: `java.project.getAll`, etc
+Before to execute a command (analyze, etc), configure use the CLI arguments or use the Quarkus properties[application.properties](src/main/resources/application.properties) :
+
+```shell
+export PARAMS="--jdt-ls-path /PATH/TO/java-analyzer-quarkus/jdt/konveyor-jdtls --jdt-workspace /PATH/TO/java-analyzer-quarkus/jdt -r /PATH/TO/java-analyzer-quarkus/rules"
+mvn quarkus:dev -Dquarkus.args="analyze $PARAMS ./applications/spring-boot-todo-app"
+
+OR
+
+mvn quarkus:dev -Dquarkus.args="analyze ./applications/spring-boot-todo-app"
+```
+
+You can check the log of the server from the parent folder within: `.jdt_workspace/.metadata/.log` !
+
+## Start using the JdtlsFactory MAin application
+
+Before to run the server and client, configure the following system properties or override the Quarkus properties[application.properties](src/main/resources/application.properties):
+- `JDT_WKS`: Path of the folder containing the jdt-ls workspace, .metadata and log. Default: `./jdt/`
+- `JDT_LS_PATH`: Path of the jdt language server folder. Default: `./jdt/konveyor-jdtls`
+- `LS_CMD`: Language server command to be executed. Default: `io.konveyor.tackle.ruleEntry`, etc
 - `APP_PATH`: Path of the java project to analyze. Default: `./applications/spring-boot-todo-app`
 - `RULES_PATH`: Path of the rules. Default: `./rules`
 
 ```shell
-set -gx PARAMS "--jdt-ls-path /Users/cmoullia/code/application-modernisation/spring-to-quarkus-guide/lsp/jdt/konveyor-jdtls --jdt-workspace /Users/cmoullia/code/application-modernisation/spring-to-quarkus-guide/lsp/jdt -r /Users/cmoullia/code/application-modernisation/spring-to-quarkus-guide/java-analyzer-cli/rules"
-mvn quarkus:dev -Dquarkus.args="analyze $PARAMS ./applications/spring-boot-todo-app"
+mvn exec:java
 ```
-You can check the log of the server from the parent folder within: `.jdt_workspace/.metadata/.log` !

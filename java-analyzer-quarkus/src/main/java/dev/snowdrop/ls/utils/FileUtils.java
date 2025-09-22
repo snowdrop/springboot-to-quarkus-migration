@@ -1,10 +1,11 @@
 package dev.snowdrop.ls.utils;
 
+import org.jboss.logging.Logger;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.jboss.logging.Logger;
 
 public class FileUtils {
     private static final Logger logger = Logger.getLogger(FileUtils.class.getName());

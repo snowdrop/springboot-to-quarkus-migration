@@ -1,10 +1,10 @@
 package dev.snowdrop.ls;
 
 import com.google.gson.Gson;
-import jakarta.enterprise.context.ApplicationScoped;
 import com.google.gson.JsonObject;
+import dev.snowdrop.commands.AnalyzeCommand;
 import dev.snowdrop.ls.utils.LSClient;
-import dev.snowdrop.ls.model.Rule;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.lsp4j.ClientCapabilities;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,9 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static dev.snowdrop.ls.services.LsSearchService.analyzeCodeFromRule;
-import static dev.snowdrop.ls.services.LsSearchService.executeLsCmd;
 import static dev.snowdrop.ls.utils.FileUtils.resolvePath;
-import static dev.snowdrop.ls.utils.YamlRuleParser.parseRulesFromFolder;
 
 @ApplicationScoped
 public class JdtLsFactory {
@@ -52,40 +49,45 @@ public class JdtLsFactory {
 
     public static void main(String[] args) throws Exception {
         JdtLsFactory jdtlsFactory = new JdtLsFactory();
-        jdtlsFactory.initProperties();
+        jdtlsFactory.initProperties(this);
         jdtlsFactory.launchLsProcess();
         jdtlsFactory.createLaunchLsClient();
         jdtlsFactory.initLanguageServer();
         jdtlsFactory.analyze();
     }
 
-    public void initProperties() {
+    public void initProperties(AnalyzeCommand analyzeCommand) {
         String appPathString = Optional
             .ofNullable(System.getProperty("APP_PATH"))
+            .or(() -> Optional.ofNullable(analyzeCommand.appPath))
             .or(() -> Optional.ofNullable(ConfigProvider.getConfig().getValue("analyzer.app-path", String.class)))
             .orElseThrow(() -> new RuntimeException("Path to the project to scan is missing !"));
         appPath = resolvePath(appPathString).toString();
 
         String jdtLsPathString = Optional
             .ofNullable(System.getProperty("JDT_LS_PATH"))
+            .or(() -> Optional.ofNullable(analyzeCommand.jdtLsPath))
             .or(() -> Optional.ofNullable(ConfigProvider.getConfig().getValue("analyzer.jdt-ls-path", String.class)))
             .orElseThrow(() -> new RuntimeException("JDT_LS_PATH system property is missing !"));
         jdtLsPath = resolvePath(jdtLsPathString).toString();
 
         String jdtWksString = Optional
             .ofNullable(System.getProperty("JDT_WKS"))
+            .or(() -> Optional.ofNullable(analyzeCommand.jdtWorkspace))
             .or(() -> Optional.ofNullable(ConfigProvider.getConfig().getValue("analyzer.jdt-workspace-path", String.class)))
             .orElseThrow(() -> new RuntimeException("JDT_WKS system property is missing !"));
         jdtWks = resolvePath(jdtWksString).toString();
 
         String rulesPathString = Optional
             .ofNullable(System.getProperty("RULES_PATH"))
+            .or(() -> Optional.ofNullable(analyzeCommand.rulesPath))
             .or(() -> Optional.ofNullable(ConfigProvider.getConfig().getValue("analyzer.rules-path", String.class)))
             .orElseThrow(() -> new RuntimeException("Path of the rules folder is missing !"));
         rulesPath = resolvePath(rulesPathString);
 
         lsCmd = Optional
             .ofNullable(System.getProperty("LS_CMD"))
+            .or(() -> Optional.ofNullable(analyzeCommand.lsCommand))
             .or(() -> Optional.ofNullable(ConfigProvider.getConfig().getValue("analyzer.jdt-ls-command", String.class)))
             .orElseThrow(() -> new RuntimeException("Command to be executed against the LS server is missing !"));
 

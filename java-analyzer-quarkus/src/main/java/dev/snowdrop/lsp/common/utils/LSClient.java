@@ -15,27 +15,27 @@ public class LSClient implements LanguageClient {
 
     @Override
     public void telemetryEvent(Object object) {
-        logger.infof("telemetryEvent: {}", object);
+        logger.infof("telemetryEvent: %s", object);
     }
 
     @Override
     public void publishDiagnostics(PublishDiagnosticsParams diagnostics) {
-        logger.debugf("publishDiagnostics: {}", diagnostics);
+        logger.debugf("publishDiagnostics: %s", diagnostics);
     }
 
     @Override
     public void showMessage(MessageParams messageParams) {
-        logger.infof("==== CLIENT: Message from server: [{}] {}", messageParams.getType(), messageParams.getMessage());
+        logger.infof("==== CLIENT: Message from server: [%s] %s", messageParams.getType(), messageParams.getMessage());
     }
 
     @Override
     public CompletableFuture<MessageActionItem> showMessageRequest(ShowMessageRequestParams requestParams) {
-        logger.infof("showMessageRequest: {}", requestParams);
+        logger.infof("showMessageRequest: %s", requestParams);
         return new CompletableFuture<>();
     }
 
     @Override
     public void logMessage(MessageParams messageParams) {
-        logger.infof("==== CLIENT: Log from server: [{}] {}", messageParams.getType(), messageParams.getMessage());
+        logger.infof("==== CLIENT: Log from server: [%s] %s", messageParams.getType(), messageParams.getMessage());
     }
 }

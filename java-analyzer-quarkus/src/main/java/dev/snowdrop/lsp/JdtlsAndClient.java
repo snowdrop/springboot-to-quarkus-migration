@@ -1,10 +1,10 @@
 package dev.snowdrop.lsp;
 
 import com.google.gson.Gson;
-import dev.snowdrop.lsp.common.utils.FileUtils;
+import dev.snowdrop.lsp.utils.FileUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import com.google.gson.JsonObject;
-import dev.snowdrop.lsp.common.utils.LSClient;
+import dev.snowdrop.lsp.utils.LSClient;
 import dev.snowdrop.lsp.model.Rule;
 import org.eclipse.lsp4j.ClientCapabilities;
 import org.eclipse.lsp4j.InitializeParams;
@@ -28,9 +28,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static dev.snowdrop.lsp.common.services.LsSearchService.executeLsCmd;
-import static dev.snowdrop.lsp.common.utils.FileUtils.resolvePath;
-import static dev.snowdrop.lsp.common.utils.YamlRuleParser.parseRulesFromFolder;
+import static dev.snowdrop.lsp.services.LsSearchService.executeLsCmd;
+import static dev.snowdrop.lsp.utils.FileUtils.resolvePath;
+import static dev.snowdrop.lsp.utils.YamlRuleParser.parseRulesFromFolder;
 
 @ApplicationScoped
 public class JdtlsAndClient {
@@ -83,11 +83,10 @@ public class JdtlsAndClient {
             .ofNullable(System.getProperty("LS_CMD"))
             .orElse("java.project.getAll");
 
-        // Log resolved paths for debugging
-        logger.infof("Resolved JDT_LS_PATH: %s", jdtLsPath);
-        logger.infof("Resolved JDT_WKS: %s", jdtWks);
-        logger.infof("Resolved APP_PATH: %s", appPath);
-        logger.infof("Resolved RULES_PATH: %s", rulesPath);
+        logger.infof("JDT_LS_PATH: %s", jdtLsPath);
+        logger.infof("JDT_WKS: %s", jdtWks);
+        logger.infof("APP_PATH: %s", appPath);
+        logger.infof("RULES_PATH: %s", rulesPath);
         logger.infof("LS_CMD: %s", lsCmd);
     }
 

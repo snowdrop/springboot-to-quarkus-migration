@@ -1,4 +1,4 @@
-package dev.snowdrop.lsp.common.utils;
+package dev.snowdrop.lsp.utils;
 
 
 import org.eclipse.lsp4j.MessageActionItem;

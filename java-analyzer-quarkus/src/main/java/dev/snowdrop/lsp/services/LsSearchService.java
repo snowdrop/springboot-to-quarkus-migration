@@ -1,4 +1,4 @@
-package dev.snowdrop.lsp.common.services;
+package dev.snowdrop.lsp.services;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -15,8 +15,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static dev.snowdrop.lsp.JdtlsAndClient.LS_CMD;
-import static dev.snowdrop.lsp.common.utils.RuleUtils.getLocationCode;
-import static dev.snowdrop.lsp.common.utils.RuleUtils.getLocationName;
+import static dev.snowdrop.lsp.utils.RuleUtils.getLocationCode;
+import static dev.snowdrop.lsp.utils.RuleUtils.getLocationName;
 
 public class LsSearchService {
 

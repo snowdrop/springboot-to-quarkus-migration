@@ -2,10 +2,10 @@ package dev.snowdrop.commands;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import dev.snowdrop.lsp.common.utils.FileUtils;
-import dev.snowdrop.lsp.common.utils.LSClient;
-import dev.snowdrop.lsp.common.utils.YamlRuleParser;
-import dev.snowdrop.lsp.common.services.LsSearchService;
+import dev.snowdrop.lsp.utils.FileUtils;
+import dev.snowdrop.lsp.utils.LSClient;
+import dev.snowdrop.lsp.utils.YamlRuleParser;
+import dev.snowdrop.lsp.services.LsSearchService;
 import dev.snowdrop.lsp.model.Rule;
 import dev.snowdrop.lsp.JdtlsAndClient;
 import org.jboss.logging.Logger;
@@ -28,6 +28,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import static dev.snowdrop.lsp.utils.FileUtils.resolvePath;
 
 @CommandLine.Command(
     name = "analyze",
@@ -117,11 +119,10 @@ public class AnalyzeCommand implements Runnable {
         logger.infof("✅ Maven project detected");
         logger.infof("✅ Spring Boot dependencies found");
 
-        // Start JDT-LS and analyze with rules
         try {
             startJdtAnalysis();
         } catch (Exception e) {
-            logger.errorf("❌ Error during JDT analysis: %s", e.getMessage());
+            logger.errorf("❌ Error: %s", e.getMessage());
             if (verbose) {
                 e.printStackTrace();
             }
@@ -156,18 +157,18 @@ public class AnalyzeCommand implements Runnable {
         String resolvedRulesPath = resolvePath(rulesPath).toString();
 
         // Log resolved paths for debugging
-        logger.infof("📋 Resolved JDT-LS path: %s", resolvedJdtLsPath);
-        logger.infof("📋 Resolved workspace: %s", resolvedJdtWorkspace);
-        logger.infof("📋 Resolved project path: %s", resolvedProjectPath);
-        logger.infof("📋 Resolved rules path: %s", resolvedRulesPath);
+        logger.infof("📋 JDT-LS path: %s", resolvedJdtLsPath);
+        logger.infof("📋 workspace: %s", resolvedJdtWorkspace);
+        logger.infof("📋 project path: %s", resolvedProjectPath);
+        logger.infof("📋 rules path: %s", resolvedRulesPath);
+        logger.infof("📋 LS Command: %s", lsCommand);
 
-        // Set system properties for JDT-LS
         System.setProperty("JDT_LS_PATH", resolvedJdtLsPath);
         System.setProperty("JDT_WKS", resolvedJdtWorkspace);
         System.setProperty("APP_PATH", resolvedProjectPath);
         System.setProperty("RULES_PATH", resolvedRulesPath);
+        System.setProperty("LS_CMD", lsCommand);
 
-        // Set LS_CMD in JdtlsAndClient from configuration
         JdtlsAndClient.LS_CMD = lsCommand;
         logger.infof("📋 LS_CMD set to: %s", JdtlsAndClient.LS_CMD);
 
@@ -182,33 +183,27 @@ public class AnalyzeCommand implements Runnable {
         }
 
         try {
-            // Launch JDT-LS process
             logger.infof("🚀 Starting JDT Language Server process...");
             launchJdtProcess();
 
-            // Create and launch the LS client
             logger.infof("🔌 Connecting to JDT Language Server...");
             createLaunchLsClient();
 
             remoteProxy = launcher.getRemoteProxy();
 
-            // Initialize the language server
             logger.infof("⚙️  Initializing JDT Language Server...");
             CompletableFuture<InitializeResult> future = initializeLanguageServer(appPath);
 
-            // Execute rules analysis
             logger.infof("🔍 Executing %s rules...", rules.size());
             for (Rule rule : rules) {
                 logger.infof("\n🔍 Executing rule: %s", rule.ruleID());
                 executeRule(future, rule);
             }
 
-            // Wait a bit for async LS commands to complete
             logger.infof("⏳ Waiting for LS commands to complete...");
             Thread.sleep(5000); // Give time for async operations to complete
 
         } finally {
-            // Clean up
             if (jdtProcess != null && jdtProcess.isAlive()) {
                 logger.infof("🛑 Shutting down JDT Language Server...");
                 jdtProcess.destroyForcibly();
@@ -413,24 +408,5 @@ public class AnalyzeCommand implements Runnable {
 
         logger.infof("✅ JDT Language Server initialized");
         return future;
-    }
-
-    private Path resolvePath(String pathString) {
-        logger.debugf("📋 Resolving path: %s", pathString);
-
-        if (pathString == null) {
-            throw new IllegalArgumentException("Path string cannot be null");
-        }
-
-        Path path = Paths.get(pathString);
-        if (path.isAbsolute()) {
-            logger.debugf("📋 Path is already absolute: %s", path);
-            return path;
-        } else {
-            // Resolve relative paths from user.dir
-            Path resolved = Paths.get(System.getProperty("user.dir"), pathString);
-            logger.debugf("📋 Resolved relative path '%s' to: %s", pathString, resolved);
-            return resolved;
-        }
     }
 }

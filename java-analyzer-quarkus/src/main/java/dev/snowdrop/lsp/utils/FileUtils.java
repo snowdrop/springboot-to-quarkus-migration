@@ -1,4 +1,4 @@
-package dev.snowdrop.lsp.common.utils;
+package dev.snowdrop.lsp.utils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,13 +27,21 @@ public class FileUtils {
     }
 
     public static Path resolvePath(String pathString) {
+        logger.debugf("📋 Resolving path: %s", pathString);
+
+        if (pathString == null) {
+            throw new IllegalArgumentException("Path string cannot be null");
+        }
+
         Path path = Paths.get(pathString);
         if (path.isAbsolute()) {
+            logger.debugf("📋 Path is already absolute: %s", path);
             return path;
         } else {
-            // Resolve relative paths from current working directory
             Path currentDir = Paths.get(System.getProperty("user.dir"));
-            return currentDir.resolve(pathString).normalize().toAbsolutePath();
+            Path normalizedAndAbsPath = currentDir.resolve(pathString).normalize().toAbsolutePath();
+            logger.debugf("📋 Resolved relative path '%s' to: %s", pathString, normalizedAndAbsPath);
+            return normalizedAndAbsPath;
         }
     }
 }

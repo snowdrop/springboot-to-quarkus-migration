@@ -1,4 +1,4 @@
-package dev.snowdrop.lsp.common.utils;
+package dev.snowdrop.lsp.utils;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -188,17 +188,21 @@ TO BE CONTINUED !
 
 ### Migration guide example 
 
-1. Spring Petclinic to Quarkus (french)
+1. Red Hat work - Eric and Daniel
+
+- https://docs.google.com/document/d/158WMNNpQ_BbNFMztstqoCoEDwhH8I9qzmC0NV3tJZhk/edit?tab=t.0
+
+2. Spring Petclinic to Quarkus (french)
 
 - Very valuable project as it covers more complex aspect of the migration and cover the move from Thymeleaf to Qute: https://javaetmoi.com/2025/04/spring-petclinic-sous-extensions-quarkus/
 
-1. Markus blog's posts
+3. Markus blog's posts
 
 - https://www.the-main-thread.com/p/spring-to-quarkus-without-the-rewrite
 - https://www.the-main-thread.com/p/spring-to-quarkus-move-your-java
 - https://www.the-main-thread.com/p/spring-to-quarkus-migration-guide
 
-2. Openrewrite
+4. Openrewrite
 
 - Quarkus 1.x to 2.x: https://docs.openrewrite.org/running-recipes/popular-recipe-guides/quarkus-2.x-migration-from-quarkus-1.x
 - Spring Boot 2.x to 3.x: https://docs.openrewrite.org/running-recipes/popular-recipe-guides/migrate-to-spring-3

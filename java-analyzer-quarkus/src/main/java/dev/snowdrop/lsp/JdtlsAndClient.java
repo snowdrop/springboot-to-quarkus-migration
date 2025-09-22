@@ -40,6 +40,7 @@ public class JdtlsAndClient {
     private Process process = null;
     private LanguageServer remoteProxy;
     private Launcher<LanguageServer> launcher;
+    private CompletableFuture<InitializeResult> future;
 
     private String jdtLsPath;
     private String jdtWks;
@@ -47,14 +48,9 @@ public class JdtlsAndClient {
     private Path rulesPath;
     private String lsCmd;
 
-    public void initializeAndAnalyze() throws Exception {
-        initProperties();
-        launchLsProcess();
-        createLaunchLsClient();
-
+    private void initLanguageServer() throws Exception {
         remoteProxy = launcher.getRemoteProxy();
 
-        // TODO : To review in order to pass some missing parameters from a JSON file
         InitializeParams p = new InitializeParams();
         p.setProcessId((int) ProcessHandle.current().pid());
         p.setRootUri(getApplicationDir(appPath).toUri().toString());
@@ -72,13 +68,14 @@ public class JdtlsAndClient {
         Object initializationOptions = new Gson().fromJson(json, JsonObject.class);
         p.setInitializationOptions(initializationOptions);
 
-        CompletableFuture<InitializeResult> future = remoteProxy.initialize(p);
+        future = remoteProxy.initialize(p);
         future.get(TIMEOUT, TimeUnit.MILLISECONDS).toString();
 
         InitializedParams initialized = new InitializedParams();
         remoteProxy.initialized(initialized);
+    }
 
-        // Parse the YAML rules to be tested against the project to be analyzed
+    private void analyze() throws IOException {
         List<Rule> rules = parseRulesFromFolder(rulesPath);
         for (Rule rule : rules) {
             executeLsCmd(future, remoteProxy, rule.withLsCmd(lsCmd));
@@ -86,9 +83,12 @@ public class JdtlsAndClient {
     }
 
     public static void main(String[] args) throws Exception {
-        // TODO: Check why no messages are logged !
         JdtlsAndClient client = new JdtlsAndClient();
-        client.initializeAndAnalyze();
+        client.initProperties();
+        client.launchLsProcess();
+        client.createLaunchLsClient();
+        client.initLanguageServer();
+        client.analyze();
     }
 
     // Create and launch the LS client able to talk to the LS server

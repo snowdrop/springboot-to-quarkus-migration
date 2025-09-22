@@ -58,6 +58,10 @@ mvn quarkus:dev -Dquarkus.args="analyze $PARAMS ./applications/spring-boot-todo-
 OR
 
 mvn quarkus:dev -Dquarkus.args="analyze ./applications/spring-boot-todo-app"
+
+OR
+
+
 ```
 
 You can check the log of the server from the parent folder within: `.jdt_workspace/.metadata/.log` !

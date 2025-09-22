@@ -49,7 +49,7 @@ public class JdtLsFactory {
 
     public static void main(String[] args) throws Exception {
         JdtLsFactory jdtlsFactory = new JdtLsFactory();
-        jdtlsFactory.initProperties(this);
+        jdtlsFactory.initProperties(null);
         jdtlsFactory.launchLsProcess();
         jdtlsFactory.createLaunchLsClient();
         jdtlsFactory.initLanguageServer();
@@ -59,35 +59,35 @@ public class JdtLsFactory {
     public void initProperties(AnalyzeCommand analyzeCommand) {
         String appPathString = Optional
             .ofNullable(System.getProperty("APP_PATH"))
-            .or(() -> Optional.ofNullable(analyzeCommand.appPath))
+            .or(() -> Optional.ofNullable(analyzeCommand).map(cmd -> cmd.appPath))
             .or(() -> Optional.ofNullable(ConfigProvider.getConfig().getValue("analyzer.app-path", String.class)))
             .orElseThrow(() -> new RuntimeException("Path to the project to scan is missing !"));
         appPath = resolvePath(appPathString).toString();
 
         String jdtLsPathString = Optional
             .ofNullable(System.getProperty("JDT_LS_PATH"))
-            .or(() -> Optional.ofNullable(analyzeCommand.jdtLsPath))
+            .or(() -> Optional.ofNullable(analyzeCommand).map(cmd -> cmd.jdtLsPath))
             .or(() -> Optional.ofNullable(ConfigProvider.getConfig().getValue("analyzer.jdt-ls-path", String.class)))
             .orElseThrow(() -> new RuntimeException("JDT_LS_PATH system property is missing !"));
         jdtLsPath = resolvePath(jdtLsPathString).toString();
 
         String jdtWksString = Optional
             .ofNullable(System.getProperty("JDT_WKS"))
-            .or(() -> Optional.ofNullable(analyzeCommand.jdtWorkspace))
+            .or(() -> Optional.ofNullable(analyzeCommand).map(cmd -> cmd.jdtWorkspace))
             .or(() -> Optional.ofNullable(ConfigProvider.getConfig().getValue("analyzer.jdt-workspace-path", String.class)))
             .orElseThrow(() -> new RuntimeException("JDT_WKS system property is missing !"));
         jdtWks = resolvePath(jdtWksString).toString();
 
         String rulesPathString = Optional
             .ofNullable(System.getProperty("RULES_PATH"))
-            .or(() -> Optional.ofNullable(analyzeCommand.rulesPath))
+            .or(() -> Optional.ofNullable(analyzeCommand).map(cmd -> cmd.rulesPath))
             .or(() -> Optional.ofNullable(ConfigProvider.getConfig().getValue("analyzer.rules-path", String.class)))
             .orElseThrow(() -> new RuntimeException("Path of the rules folder is missing !"));
         rulesPath = resolvePath(rulesPathString);
 
         lsCmd = Optional
             .ofNullable(System.getProperty("LS_CMD"))
-            .or(() -> Optional.ofNullable(analyzeCommand.lsCommand))
+            .or(() -> Optional.ofNullable(analyzeCommand).map(cmd -> cmd.lsCommand))
             .or(() -> Optional.ofNullable(ConfigProvider.getConfig().getValue("analyzer.jdt-ls-command", String.class)))
             .orElseThrow(() -> new RuntimeException("Command to be executed against the LS server is missing !"));
 

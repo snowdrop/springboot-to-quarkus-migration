@@ -160,6 +160,7 @@ class ChangeSpringBootToQuarkusRecipe extends Recipe {
                     maybeRemoveImport("org.springframework.boot.autoconfigure.SpringBootApplication");
                     maybeRemoveImport("org.springframework.boot.SpringApplication");
                     maybeAddImport("io.quarkus.runtime.annotations.QuarkusMain");
+                    maybeAddImport("io.quarkus.runtime.Quarkus");
                 }
 
                 return c;
@@ -170,10 +171,30 @@ class ChangeSpringBootToQuarkusRecipe extends Recipe {
                 J.Annotation a = super.visitAnnotation(annotation, ctx);
                 if(annotationToChange.contains(a.getSimpleName())) {
                     return JavaTemplate.builder("@QuarkusMain")
+                        .javaParser(JavaParser.fromJavaVersion().classpath("quarkus-core"))
+                        .imports("io.quarkus.runtime.annotations.QuarkusMain")
                         .build()
                         .apply(getCursor(), a.getCoordinates().replace());
                 }
                 return a;
+            }
+
+            @Override
+            public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
+                J.MethodInvocation m = super.visitMethodInvocation(method, ctx);
+
+                // Check if this is SpringApplication.run()
+                if (m.getSelect() != null &&
+                    m.getSelect().toString().equals("SpringApplication") &&
+                    m.getSimpleName().equals("run")) {
+
+                    return JavaTemplate.builder("Quarkus.run(#{any(java.lang.Class)}, #{any(java.lang.String[])})")
+                        .javaParser(JavaParser.fromJavaVersion().classpath("quarkus-core"))
+                        .imports("io.quarkus.runtime.Quarkus")
+                        .build()
+                        .apply(getCursor(), m.getCoordinates().replace(), m.getArguments().get(0), m.getArguments().get(1));
+                }
+                return m;
             }
         };
     }

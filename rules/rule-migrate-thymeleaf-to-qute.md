@@ -1,6 +1,6 @@
 ## Rule: Migrate Thymeleaf templates to Qute
 
-- **Goal**: Migrate Thymeleaf HTML templates to Qute templating engine with server-side object configuration
+- **Goal**: Migrate Thymeleaf HTML templates to Qute templating engine with server-side object jdtLSConfiguration
 - **Parameters**:
   - TEMPLATE_DIRECTORY: _Directory containing Thymeleaf templates (default: src/main/resources/templates)_
   - CONTROLLER_PACKAGE: _Package containing Spring @Controller classes_

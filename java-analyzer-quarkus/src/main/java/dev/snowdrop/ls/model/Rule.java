@@ -1,4 +1,4 @@
-package dev.snowdrop.lsp.model;
+package dev.snowdrop.ls.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

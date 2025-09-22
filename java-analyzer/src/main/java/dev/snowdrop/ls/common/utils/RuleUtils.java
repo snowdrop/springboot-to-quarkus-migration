@@ -1,9 +1,10 @@
-package dev.snowdrop.lsp.utils;
+package dev.snowdrop.ls.common.utils;
 
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RuleUtils {
-    private static final Logger logger = Logger.getLogger(RuleUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(RuleUtils.class);
 
     public static String getLocationCode(String location) {
         if (location == null) {
@@ -27,7 +28,7 @@ public class RuleUtils {
             case "METHOD" -> "13";
             case "CLASS" -> "14";
             default -> {
-                logger.warnf("Unknown location type '{}', defaulting to 0", location);
+                logger.warn("Unknown location type '{}', defaulting to 0", location);
                 yield "0";
             }
         };
@@ -55,7 +56,7 @@ public class RuleUtils {
             case "13" -> "METHOD";
             case "14" -> "CLASS";
             default -> {
-                logger.warnf("Unknown location code '{}', defaulting to UNKNOWN", code);
+                logger.warn("Unknown location code '{}', defaulting to UNKNOWN", code);
                 yield "UNKNOWN";
             }
         };

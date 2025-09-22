@@ -110,9 +110,9 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.5.1</version>
-                <configuration>
-                    <mainClass>dev.snowdrop.lsp.JdtlsAndClient</mainClass>
-                </configuration>
+                <jdtLSConfiguration>
+                    <mainClass>dev.snowdrop.ls.JdtLsFactory</mainClass>
+                </jdtLSConfiguration>
             </plugin>
         </plugins>
     </build>

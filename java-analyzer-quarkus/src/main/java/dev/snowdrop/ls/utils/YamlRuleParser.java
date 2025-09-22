@@ -1,9 +1,9 @@
-package dev.snowdrop.lsp.utils;
+package dev.snowdrop.ls.utils;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import dev.snowdrop.lsp.model.Rule;
+import dev.snowdrop.ls.model.Rule;
 import org.jboss.logging.Logger;
 
 import java.io.IOException;

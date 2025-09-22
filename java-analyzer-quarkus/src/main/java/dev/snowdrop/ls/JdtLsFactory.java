@@ -1,11 +1,10 @@
-package dev.snowdrop.lsp;
+package dev.snowdrop.ls;
 
 import com.google.gson.Gson;
-import dev.snowdrop.lsp.utils.FileUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import com.google.gson.JsonObject;
-import dev.snowdrop.lsp.utils.LSClient;
-import dev.snowdrop.lsp.model.Rule;
+import dev.snowdrop.ls.utils.LSClient;
+import dev.snowdrop.ls.model.Rule;
 import org.eclipse.lsp4j.ClientCapabilities;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
@@ -13,6 +12,7 @@ import org.eclipse.lsp4j.InitializedParams;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.eclipse.lsp4j.launch.LSPLauncher;
 import org.eclipse.lsp4j.services.LanguageServer;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import java.io.File;
@@ -28,74 +28,81 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static dev.snowdrop.lsp.services.LsSearchService.executeLsCmd;
-import static dev.snowdrop.lsp.utils.FileUtils.resolvePath;
-import static dev.snowdrop.lsp.utils.YamlRuleParser.parseRulesFromFolder;
+import static dev.snowdrop.ls.services.LsSearchService.executeLsCmd;
+import static dev.snowdrop.ls.utils.FileUtils.resolvePath;
+import static dev.snowdrop.ls.utils.YamlRuleParser.parseRulesFromFolder;
 
 @ApplicationScoped
-public class JdtlsAndClient {
-    private static final Logger logger = Logger.getLogger(JdtlsAndClient.class);
+public class JdtLsFactory {
+    private static final Logger logger = Logger.getLogger(JdtLsFactory.class);
     private static final long TIMEOUT = 30000;
-    public static String LS_CMD;
 
     private Process process = null;
-    private LanguageServer remoteProxy;
-    private Launcher<LanguageServer> launcher;
-    private CompletableFuture<InitializeResult> future;
+    public LanguageServer remoteProxy;
+    public Launcher<LanguageServer> launcher;
 
-    private String jdtLsPath;
-    private String jdtWks;
-    private String appPath;
-    private Path rulesPath;
-    private String lsCmd;
+    public String jdtLsPath;
+    public String jdtWks;
+    public String appPath;
+    public Path rulesPath;
+    public String lsCmd;
+
+    public CompletableFuture<InitializeResult> future;
 
     public static void main(String[] args) throws Exception {
-        JdtlsAndClient client = new JdtlsAndClient();
-        client.initProperties();
-        client.launchLsProcess();
-        client.createLaunchLsClient();
-        client.initLanguageServer();
-        client.analyze();
+
+        JdtLsFactory jdtlsFactory = new JdtLsFactory();
+        jdtlsFactory.initProperties();
+        jdtlsFactory.launchLsProcess();
+        jdtlsFactory.createLaunchLsClient();
+        jdtlsFactory.initLanguageServer();
+        jdtlsFactory.analyze();
     }
 
-    private void initProperties() {
+    public void initProperties() {
+        String appPathString = Optional
+            .ofNullable(System.getProperty("APP_PATH"))
+            .or(() -> Optional.ofNullable(ConfigProvider.getConfig().getValue("analyzer.app-path", String.class)))
+            .orElseThrow(() -> new RuntimeException("Path to the project to scan is missing !"));
+        appPath = resolvePath(appPathString).toString();
+
         String jdtLsPathString = Optional
             .ofNullable(System.getProperty("JDT_LS_PATH"))
+            .or(() -> Optional.ofNullable(ConfigProvider.getConfig().getValue("analyzer.jdt-ls-path", String.class)))
             .orElseThrow(() -> new RuntimeException("JDT_LS_PATH system property is missing !"));
         jdtLsPath = resolvePath(jdtLsPathString).toString();
 
         String jdtWksString = Optional
             .ofNullable(System.getProperty("JDT_WKS"))
+            .or(() -> Optional.ofNullable(ConfigProvider.getConfig().getValue("analyzer.jdt-workspace-path", String.class)))
             .orElseThrow(() -> new RuntimeException("JDT_WKS system property is missing !"));
         jdtWks = resolvePath(jdtWksString).toString();
 
-        String appPathString = Optional
-            .ofNullable(System.getProperty("APP_PATH"))
-            .orElse("applications/spring-boot-todo-app");
-        appPath = appPathString;
-
         String rulesPathString = Optional
             .ofNullable(System.getProperty("RULES_PATH"))
-            .orElse("rules");
+            .or(() -> Optional.ofNullable(ConfigProvider.getConfig().getValue("analyzer.rules-path", String.class)))
+            .orElseThrow(() -> new RuntimeException("Path of the rules folder is missing !"));
         rulesPath = resolvePath(rulesPathString);
 
         lsCmd = Optional
             .ofNullable(System.getProperty("LS_CMD"))
-            .orElse("java.project.getAll");
+            .or(() -> Optional.ofNullable(ConfigProvider.getConfig().getValue("analyzer.jdt-ls-command", String.class)))
+            .orElseThrow(() -> new RuntimeException("Command to be executed against the LS server is missing !"));
 
+        logger.infof("APP_PATH: %s", appPath);
         logger.infof("JDT_LS_PATH: %s", jdtLsPath);
         logger.infof("JDT_WKS: %s", jdtWks);
-        logger.infof("APP_PATH: %s", appPath);
         logger.infof("RULES_PATH: %s", rulesPath);
         logger.infof("LS_CMD: %s", lsCmd);
     }
 
-    private void initLanguageServer() throws Exception {
+    public void initLanguageServer() throws Exception {
         remoteProxy = launcher.getRemoteProxy();
 
         InitializeParams p = new InitializeParams();
         p.setProcessId((int) ProcessHandle.current().pid());
-        p.setRootUri(FileUtils.getApplicationDir(appPath.toString()).toUri().toString());
+        // The path to the application to be scanned should be created as URI (file:///) !!
+        p.setRootUri(resolvePath(appPath).toUri().toString());
         p.setCapabilities(new ClientCapabilities());
 
         String bundlePath = String.format("[\"%s\"]", Paths.get(jdtLsPath, "java-analyzer-bundle", "java-analyzer-bundle.core", "target", "java-analyzer-bundle.core-1.0.0-SNAPSHOT.jar"));
@@ -117,7 +124,7 @@ public class JdtlsAndClient {
         remoteProxy.initialized(initialized);
     }
 
-    private void launchLsProcess() {
+    public void launchLsProcess() {
         Path wksDir = Paths.get(jdtWks);
 
         String os = System.getProperty("os.name").toLowerCase();
@@ -169,7 +176,7 @@ public class JdtlsAndClient {
 
     }
 
-    private void createLaunchLsClient() {
+    public void createLaunchLsClient() {
         ExecutorService executor;
 
         logger.info("Connecting to the JDT Language Server ...");
@@ -191,7 +198,7 @@ public class JdtlsAndClient {
     private void analyze() throws IOException {
         List<Rule> rules = parseRulesFromFolder(rulesPath);
         for (Rule rule : rules) {
-            executeLsCmd(future, remoteProxy, rule.withLsCmd(lsCmd));
+            executeLsCmd( this, rule);
         }
     }
 }

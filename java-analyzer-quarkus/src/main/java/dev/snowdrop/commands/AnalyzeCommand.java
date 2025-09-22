@@ -2,12 +2,15 @@ package dev.snowdrop.commands;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import dev.snowdrop.lsp.utils.FileUtils;
-import dev.snowdrop.lsp.utils.LSClient;
-import dev.snowdrop.lsp.utils.YamlRuleParser;
-import dev.snowdrop.lsp.services.LsSearchService;
-import dev.snowdrop.lsp.model.Rule;
-import dev.snowdrop.lsp.JdtlsAndClient;
+import dev.snowdrop.ls.JdtLsFactory;
+import dev.snowdrop.ls.model.JdtLSConfiguration;
+import dev.snowdrop.ls.utils.FileUtils;
+import dev.snowdrop.ls.utils.LSClient;
+import dev.snowdrop.ls.utils.RuleUtils;
+import dev.snowdrop.ls.services.LsSearchService;
+import dev.snowdrop.ls.model.Rule;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
 import org.eclipse.lsp4j.*;
@@ -29,21 +32,26 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static dev.snowdrop.lsp.utils.FileUtils.resolvePath;
+import static dev.snowdrop.ls.utils.FileUtils.resolvePath;
 
 @CommandLine.Command(
     name = "analyze",
     description = "Analyze a project for migration"
 )
+@ApplicationScoped
 public class AnalyzeCommand implements Runnable {
 
     private static final Logger logger = Logger.getLogger(AnalyzeCommand.class);
+
+    @Inject
+    JdtLSConfiguration jdtLSConfiguration;
 
     @CommandLine.Parameters(
         index = "0",
         description = "Path to the Java project to analyze"
     )
-    String appPath;
+    @ConfigProperty(name = "analyzer.app.path", defaultValue = "./applications/spring-boot-todo-app")
+    public String appPath;
 
     @CommandLine.Option(
         names = {"-r", "--rules"},
@@ -120,7 +128,13 @@ public class AnalyzeCommand implements Runnable {
         logger.infof("✅ Spring Boot dependencies found");
 
         try {
-            startJdtAnalysis();
+            JdtLsFactory jdtLsFactory = new JdtLsFactory();
+            jdtLsFactory.initProperties();
+            jdtLsFactory.launchLsProcess();
+            jdtLsFactory.createLaunchLsClient();
+            jdtLsFactory.initLanguageServer();
+
+            startAnalyse(jdtLsFactory);
         } catch (Exception e) {
             logger.errorf("❌ Error: %s", e.getMessage());
             if (verbose) {
@@ -132,7 +146,7 @@ public class AnalyzeCommand implements Runnable {
         logger.infof("- Migration: Ready for next step");
     }
 
-    private void startJdtAnalysis() throws Exception {
+    private void startAnalyse(JdtLsFactory factory) throws Exception {
         logger.infof("\n🚀 Starting JDT Language Server analysis...");
         logger.infof("📋 Configuration: JDT-LS path: %s, JDT Workspace: %s, Rules: %s & Application to scan: %s", jdtLsPath, jdtWorkspace, rulesPath, appPath);
 
@@ -169,21 +183,10 @@ public class AnalyzeCommand implements Runnable {
         System.setProperty("RULES_PATH", resolvedRulesPath);
         System.setProperty("LS_CMD", lsCommand);
 
-        JdtlsAndClient.LS_CMD = lsCommand;
-        logger.infof("📋 LS_CMD set to: %s", JdtlsAndClient.LS_CMD);
-
-        // Parse rules
-        logger.infof("📋 Loading migration rules...");
-        List<Rule> rules = loadRules();
-        logger.infof("Found %s rules to execute", rules.size());
-
-        if (rules.isEmpty()) {
-            logger.infof("⚠️  No rules found, skipping JDT-LS analysis");
-            return;
-        }
+        logger.infof("📋 LS_CMD set to: %s", factory.lsCmd);
 
         try {
-            logger.infof("🚀 Starting JDT Language Server process...");
+/*            logger.infof("🚀 Starting JDT Language Server process...");
             launchJdtProcess();
 
             logger.infof("🔌 Connecting to JDT Language Server...");
@@ -192,12 +195,20 @@ public class AnalyzeCommand implements Runnable {
             remoteProxy = launcher.getRemoteProxy();
 
             logger.infof("⚙️  Initializing JDT Language Server...");
-            CompletableFuture<InitializeResult> future = initializeLanguageServer(appPath);
+            CompletableFuture<InitializeResult> future = initializeLanguageServer(appPath);*/
+
+
+            List<Rule> rules = RuleUtils.loadRules();
+
+            if(rules.isEmpty()) {
+                logger.infof("⚠️  No rules found, skipping JDT-LS analysis");
+                return;
+            }
 
             logger.infof("🔍 Executing %s rules...", rules.size());
             for (Rule rule : rules) {
                 logger.infof("\n🔍 Executing rule: %s", rule.ruleID());
-                executeRule(future, rule);
+                executeRule(factory, rule);
             }
 
             logger.infof("⏳ Waiting for LS commands to complete...");
@@ -211,23 +222,7 @@ public class AnalyzeCommand implements Runnable {
         }
     }
 
-    private List<Rule> loadRules() {
-        try {
-            String resolvedRulesPath = System.getProperty("RULES_PATH");
-            File rulesDir = new File(resolvedRulesPath);
-            if (!rulesDir.exists()) {
-                logger.errorf("⚠️  Rules directory not found: %s", resolvedRulesPath);
-                return List.of();
-            }
-
-            return YamlRuleParser.parseRulesFromFolder(rulesDir.toPath());
-        } catch (Exception e) {
-            logger.errorf("❌ Error loading rules: %s", e.getMessage());
-            return List.of();
-        }
-    }
-
-    private void executeRule(CompletableFuture<InitializeResult> future, Rule rule) {
+    private void executeRule(JdtLsFactory factory, Rule rule) {
         try {
             if (verbose) {
                 logger.infof("  Rule description: %s", rule.message());
@@ -271,7 +266,7 @@ public class AnalyzeCommand implements Runnable {
                 if (jdtProcess != null && jdtProcess.isAlive()) {
                     logger.infof("  🚀 Executing LS command (JDT process alive)");
                     // Execute the actual LS command
-                    LsSearchService.executeLsCmd(future, remoteProxy, rule.withLsCmd(JdtlsAndClient.LS_CMD));
+                    LsSearchService.executeLsCmd(factory, rule);
                 } else {
                     logger.error("  ❌ JDT process is dead, cannot execute LS command");
                 }

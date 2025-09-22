@@ -1,4 +1,4 @@
-package dev.snowdrop.lsp.utils;
+package dev.snowdrop.ls.utils;
 
 import java.io.IOException;
 import java.nio.file.Files;

@@ -1,9 +1,9 @@
-package dev.snowdrop.lsp;
+package dev.snowdrop.ls;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import dev.snowdrop.lsp.common.utils.LSClient;
-import dev.snowdrop.lsp.model.Rule;
+import dev.snowdrop.ls.common.utils.LSClient;
+import dev.snowdrop.ls.model.Rule;
 import org.eclipse.lsp4j.ClientCapabilities;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
@@ -27,9 +27,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static dev.snowdrop.lsp.common.services.LsSearchService.executeLsCmd;
-import static dev.snowdrop.lsp.common.utils.FileUtils.getApplicationDir;
-import static dev.snowdrop.lsp.common.utils.YamlRuleParser.parseRulesFromFolder;
+import static dev.snowdrop.ls.common.services.LsSearchService.executeLsCmd;
+import static dev.snowdrop.ls.common.utils.FileUtils.getApplicationDir;
+import static dev.snowdrop.ls.common.utils.YamlRuleParser.parseRulesFromFolder;
 
 public class JdtlsAndClient {
 

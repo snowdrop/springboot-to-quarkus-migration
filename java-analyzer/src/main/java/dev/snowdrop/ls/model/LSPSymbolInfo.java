@@ -1,4 +1,4 @@
-package dev.snowdrop.lsp.model;
+package dev.snowdrop.ls.model;
 
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.SymbolKind;

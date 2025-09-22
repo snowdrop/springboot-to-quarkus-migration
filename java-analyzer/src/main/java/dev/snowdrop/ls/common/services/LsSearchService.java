@@ -1,48 +1,49 @@
-package dev.snowdrop.lsp.services;
+package dev.snowdrop.ls.common.services;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
-import dev.snowdrop.lsp.model.Rule;
+import dev.snowdrop.ls.model.Rule;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.services.LanguageServer;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import static dev.snowdrop.lsp.JdtlsAndClient.LS_CMD;
-import static dev.snowdrop.lsp.utils.RuleUtils.getLocationCode;
-import static dev.snowdrop.lsp.utils.RuleUtils.getLocationName;
+import static dev.snowdrop.ls.JdtlsAndClient.LS_CMD;
+import static dev.snowdrop.ls.common.utils.RuleUtils.getLocationCode;
+import static dev.snowdrop.ls.common.utils.RuleUtils.getLocationName;
 
 public class LsSearchService {
 
-    private static final Logger logger = Logger.getLogger(LsSearchService.class);
+    private static final Logger logger = LoggerFactory.getLogger(LsSearchService.class);
 
     public static void executeLsCmd(CompletableFuture<InitializeResult> future, LanguageServer remoteProxy, Rule rule) {
 
         // Log the LS Query command to be executed on the LS server
-        logger.infof("==== CLIENT: Sending the command '%s' ...", LS_CMD);
+        logger.info("==== CLIENT: Sending the command '{}' ...", LS_CMD);
 
         // Handle three cases: single java.referenced, OR conditions, AND conditions
         if (rule.when().or() != null && !rule.when().or().isEmpty()) {
-            logger.infof("Rule When includes: %s between java.referenced", "OR");
+            logger.info("Rule When includes: {} between java.referenced", "OR");
             rule.when().or().forEach(condition ->
                 executeCommandForCondition(future, remoteProxy, rule, condition.javaReferenced())
             );
         } else if (rule.when().and() != null && !rule.when().and().isEmpty()) {
-            logger.infof("Rule When includes: %s between java.referenced", "AND");
+            logger.info("Rule When includes: {} between java.referenced", "AND");
             rule.when().and().forEach(condition ->
                 executeCommandForCondition(future, remoteProxy, rule, condition.javaReferenced())
             );
         } else if (rule.when().javaReferenced() != null) {
-            logger.infof("Rule When includes: single java.referenced");
+            logger.info("Rule When includes: single java.referenced");
             executeCommandForCondition(future, remoteProxy, rule, rule.when().javaReferenced());
         } else {
-            logger.warnf("Rule %s has no valid java.referenced conditions", rule.ruleID());
+            logger.warn("Rule {} has no valid java.referenced conditions", rule.ruleID());
         }
     }
 
@@ -59,7 +60,7 @@ public class LsSearchService {
         future
             .thenRunAsync(() -> executeCmd(rule.lsCmd(), cmdArguments, remoteProxy))
             .exceptionally(throwable -> {
-                logger.errorf("Error executing LS command for rule %s: %s", rule.ruleID(), throwable.getMessage(), throwable);
+                logger.error("Error executing LS command for rule {}: {}", rule.ruleID(), throwable.getMessage(), throwable);
                 return null;
             });
     }
@@ -87,9 +88,9 @@ public class LsSearchService {
         List<SymbolInformation> symbolInformationList = new ArrayList<>();
 
         if (result != null) {
-            logger.infof("==== CLIENT: --- Search Results using as command: %s.", customCmd);
+            logger.info("==== CLIENT: --- Search Results using as command: {}.", customCmd);
             // TODO This code should be reviewed to adapt it according to the objects returned as response
-            logger.infof("==== CLIENT: --- Result: %s", gson.toJson(result));
+            logger.info("==== CLIENT: --- Result: {}", gson.toJson(result));
 
             // Following the Konveyor approach to create SymbolInformation objects
             try {
@@ -133,23 +134,23 @@ public class LsSearchService {
                     symbolInformationList = gson.fromJson(gson.toJson(result), SymbolInformationListType);
                 }
             } catch (Exception e) {
-                logger.warnf("==== CLIENT: Failed to create SymbolInformation objects: %s", e.getMessage());
+                logger.warn("==== CLIENT: Failed to create SymbolInformation objects: {}", e.getMessage());
                 // Fallback to GSON conversion
                 try {
                     Type SymbolInformationListType = new TypeToken<List<SymbolInformation>>() {}.getType();
                     symbolInformationList = gson.fromJson(gson.toJson(result), SymbolInformationListType);
                 } catch (JsonSyntaxException | ClassCastException ex) {
-                    logger.warnf("==== CLIENT: Failed fallback GSON conversion: %s", ex.getMessage());
+                    logger.warn("==== CLIENT: Failed fallback GSON conversion: {}", ex.getMessage());
                 }
             }
 
             if (symbolInformationList.isEmpty()) {
-                logger.infof("==== CLIENT: SymbolInformation List is empty.");
+                logger.info("==== CLIENT: SymbolInformation List is empty.");
             } else {
                 Map<String, Object> args = (Map<String, Object>) arguments.get(0);
-                logger.infof("==== CLIENT: Found %s usage(s) of symbol: %s, name: %s", symbolInformationList.size(), getLocationName(args.get("location").toString()),args.get("query"));
+                logger.info("==== CLIENT: Found {} usage(s) of symbol: {}, name: {}", symbolInformationList.size(), getLocationName(args.get("location").toString()),args.get("query"));
                 for (SymbolInformation si : symbolInformationList) {
-                    logger.infof("==== CLIENT: Found %s at: %s (line %s, char: %s - %s)",
+                    logger.info("==== CLIENT: Found {} at: {} (line {}, char: {} - {})",
                         si.getName(),
                         si.getLocation().getUri(),
                         si.getLocation().getRange().getStart().getLine() + 1,
@@ -158,14 +159,14 @@ public class LsSearchService {
                     );
                 }
             }
-            logger.infof("==== CLIENT: ----------------------");
+            logger.info("==== CLIENT: ----------------------");
         } else {
             logger.warn("==== CLIENT: Received null result for command.");
         }
     }
 
     public static CompletableFuture<Optional<SymbolInformation>> searchWksSymbol(String annotationToFind, LanguageServer LS) {
-        logger.infof("==== CLIENT: Searching for the definition of '%s' within the java project...", annotationToFind);
+        logger.info("==== CLIENT: Searching for the definition of '{}' within the java project...", annotationToFind);
         WorkspaceSymbolParams symbolParams = new WorkspaceSymbolParams(annotationToFind);
 
         return LS.getWorkspaceService().symbol(symbolParams)
@@ -216,14 +217,14 @@ public class LsSearchService {
                     }
                 }
 
-                logger.infof("LSP workspace/symbol found %s symbols for '%s'", lspSymbols.size(), annotationToFind);
+                logger.info("LSP workspace/symbol found {} symbols for '{}'", lspSymbols.size(), annotationToFind);
                 return lspSymbols;
 
                 })
                 .thenAccept(lspSymbols -> {
-                    logger.infof("==== CLIENT: --- LSP workspace/symbol %s ---", lspSymbols.size());
+                    logger.info("==== CLIENT: --- LSP workspace/symbol {} ---", lspSymbols.size());
                     for (LSPSymbolInfo l : lspSymbols) {
-                        logger.infof("==== CLIENT:  -> Found @%s on %s in file: %s (line %s, char %s)",
+                        logger.info("==== CLIENT:  -> Found @{} on {} in file: {} (line {}, char {})",
                             annotationToFind,
                             "",
                             l.getFileUri(),
@@ -233,7 +234,7 @@ public class LsSearchService {
                     }
                 })
                 .exceptionally((ex) -> {
-                    logger.error("Failed to initialize language server: %s", ex.getMessage());
+                    logger.error("Failed to initialize language server: {}", ex.getMessage());
                     return null;
                 });
                 */

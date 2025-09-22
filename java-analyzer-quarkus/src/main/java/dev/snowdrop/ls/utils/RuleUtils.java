@@ -1,10 +1,13 @@
-package dev.snowdrop.lsp.common.utils;
+package dev.snowdrop.ls.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import dev.snowdrop.ls.model.Rule;
+import org.jboss.logging.Logger;
+
+import java.io.File;
+import java.util.List;
 
 public class RuleUtils {
-    private static final Logger logger = LoggerFactory.getLogger(RuleUtils.class);
+    private static final Logger logger = Logger.getLogger(RuleUtils.class);
 
     public static String getLocationCode(String location) {
         if (location == null) {
@@ -28,7 +31,7 @@ public class RuleUtils {
             case "METHOD" -> "13";
             case "CLASS" -> "14";
             default -> {
-                logger.warn("Unknown location type '{}', defaulting to 0", location);
+                logger.warnf("Unknown location type '{}', defaulting to 0", location);
                 yield "0";
             }
         };
@@ -56,9 +59,27 @@ public class RuleUtils {
             case "13" -> "METHOD";
             case "14" -> "CLASS";
             default -> {
-                logger.warn("Unknown location code '{}', defaulting to UNKNOWN", code);
+                logger.warnf("Unknown location code '{}', defaulting to UNKNOWN", code);
                 yield "UNKNOWN";
             }
         };
+    }
+
+    public static List<Rule> loadRules() {
+        logger.info("📋 Loading migration rules...");
+
+        try {
+            String resolvedRulesPath = System.getProperty("RULES_PATH");
+            File rulesDir = new File(resolvedRulesPath);
+            if (!rulesDir.exists()) {
+                logger.errorf("⚠️  Rules directory not found: %s", resolvedRulesPath);
+                return List.of();
+            }
+
+            return YamlRuleParser.parseRulesFromFolder(rulesDir.toPath());
+        } catch (Exception e) {
+            logger.errorf("❌ Error loading rules: %s", e.getMessage());
+            return List.of();
+        }
     }
 }

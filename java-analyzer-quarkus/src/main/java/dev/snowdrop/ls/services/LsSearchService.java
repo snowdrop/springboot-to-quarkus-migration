@@ -10,13 +10,14 @@ import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.jboss.logging.Logger;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import static dev.snowdrop.ls.utils.RuleUtils.getLocationCode;
 import static dev.snowdrop.ls.utils.RuleUtils.getLocationName;
+import static dev.snowdrop.ls.utils.YamlRuleParser.parseRulesFromFolder;
 
 public class LsSearchService {
 
@@ -63,7 +64,6 @@ public class LsSearchService {
                 return null;
             });
     }
-
 
     public static void executeCmd(String customCmd, List<Object> arguments, LanguageServer LS) {
         List<Object> cmdArguments = (arguments != null && !arguments.isEmpty())
@@ -164,78 +164,11 @@ public class LsSearchService {
         }
     }
 
-    public static CompletableFuture<Optional<SymbolInformation>> searchWksSymbol(String annotationToFind, LanguageServer LS) {
-        logger.infof("==== CLIENT: Searching for the definition of '%s' within the java project...", annotationToFind);
-        WorkspaceSymbolParams symbolParams = new WorkspaceSymbolParams(annotationToFind);
-
-        return LS.getWorkspaceService().symbol(symbolParams)
-            .thenApply(eitherResult -> {
-                List<SymbolInformation> symbols = new ArrayList<>();
-                if (eitherResult != null) {
-                    if (eitherResult.isLeft()) symbols.addAll(eitherResult.getLeft());
-                    else
-                        symbols.addAll(eitherResult.getRight().stream().filter(ws -> ws.getLocation().isLeft()).map(ws -> new SymbolInformation(ws.getName(), ws.getKind(), ws.getLocation().getLeft())).collect(Collectors.toList()));
-                }
-
-                // An annotation in Java has the SymbolKind 'Interface' in LSP.
-                return symbols.stream()
-                    .filter(s -> s.getKind() == SymbolKind.Interface && s.getName().equals(annotationToFind))
-                    .findFirst();
-            })
-            .exceptionally(t -> {
-                t.printStackTrace();
-                return null;
-            });
+    public static void analyzeCodeFromRule(JdtLsFactory factory) throws IOException {
+        List<Rule> rules = parseRulesFromFolder(factory.rulesPath);
+        for (Rule rule : rules) {
+            executeLsCmd( factory, rule);
+        }
     }
-
-                /* OLD code
-                List<LSPSymbolInfo> lspSymbols = new ArrayList<>();
-
-                if (eitherResult.isLeft()) {
-                    List<? extends SymbolInformation> symbols = eitherResult.getLeft();
-                    for (SymbolInformation symbol : symbols) {
-                        lspSymbols.add(new LSPSymbolInfo(
-                            symbol.getName(),
-                            symbol.getLocation().getUri(),
-                            symbol.getKind(),
-                            symbol.getLocation()
-                        ));
-                    }
-                } else {
-                    List<? extends WorkspaceSymbol> symbols = eitherResult.getRight();
-                    for (WorkspaceSymbol symbol : symbols) {
-                        if (symbol.getLocation().isLeft()) {
-                            Location location = symbol.getLocation().getLeft();
-                            lspSymbols.add(new LSPSymbolInfo(
-                                symbol.getName(),
-                                location.getUri(),
-                                symbol.getKind(),
-                                location
-                            ));
-                        }
-                    }
-                }
-
-                logger.infof("LSP workspace/symbol found %s symbols for '%s'", lspSymbols.size(), annotationToFind);
-                return lspSymbols;
-
-                })
-                .thenAccept(lspSymbols -> {
-                    logger.infof("==== CLIENT: --- LSP workspace/symbol %s ---", lspSymbols.size());
-                    for (LSPSymbolInfo l : lspSymbols) {
-                        logger.infof("==== CLIENT:  -> Found @%s on %s in file: %s (line %s, char %s)",
-                            annotationToFind,
-                            "",
-                            l.getFileUri(),
-                            l.getLocation().getRange().getStart().getLine() + 1,
-                            l.getLocation().getRange().getStart().getCharacter() + 1
-                        );
-                    }
-                })
-                .exceptionally((ex) -> {
-                    logger.error("Failed to initialize language server: %s", ex.getMessage());
-                    return null;
-                });
-                */
 
 }

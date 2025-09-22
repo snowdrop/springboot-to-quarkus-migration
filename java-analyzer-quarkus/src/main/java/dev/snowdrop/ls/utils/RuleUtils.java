@@ -4,6 +4,7 @@ import dev.snowdrop.ls.model.Rule;
 import org.jboss.logging.Logger;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 
 public class RuleUtils {
@@ -65,14 +66,13 @@ public class RuleUtils {
         };
     }
 
-    public static List<Rule> loadRules() {
+    public static List<Rule> loadRules(Path rulesPath) {
         logger.info("📋 Loading migration rules...");
 
         try {
-            String resolvedRulesPath = System.getProperty("RULES_PATH");
-            File rulesDir = new File(resolvedRulesPath);
+            File rulesDir = new File(rulesPath.toUri());
             if (!rulesDir.exists()) {
-                logger.errorf("⚠️  Rules directory not found: %s", resolvedRulesPath);
+                logger.errorf("⚠️  Rules directory not found: %s", rulesPath);
                 return List.of();
             }
 

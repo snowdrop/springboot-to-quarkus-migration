@@ -25,4 +25,15 @@ public class FileUtils {
         logger.infof("Project path: %s", tempDir.toString());
         return tempDir;
     }
+
+    public static Path resolvePath(String pathString) {
+        Path path = Paths.get(pathString);
+        if (path.isAbsolute()) {
+            return path;
+        } else {
+            // Resolve relative paths from current working directory
+            Path currentDir = Paths.get(System.getProperty("user.dir"));
+            return currentDir.resolve(pathString).normalize().toAbsolutePath();
+        }
+    }
 }

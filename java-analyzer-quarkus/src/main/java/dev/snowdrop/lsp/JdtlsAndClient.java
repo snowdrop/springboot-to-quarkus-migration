@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 import static dev.snowdrop.lsp.common.services.LsSearchService.executeLsCmd;
 import static dev.snowdrop.lsp.common.utils.FileUtils.getApplicationDir;
+import static dev.snowdrop.lsp.common.utils.FileUtils.resolvePath;
 import static dev.snowdrop.lsp.common.utils.YamlRuleParser.parseRulesFromFolder;
 
 @ApplicationScoped
@@ -48,40 +49,6 @@ public class JdtlsAndClient {
     private Path rulesPath;
     private String lsCmd;
 
-    private void initLanguageServer() throws Exception {
-        remoteProxy = launcher.getRemoteProxy();
-
-        InitializeParams p = new InitializeParams();
-        p.setProcessId((int) ProcessHandle.current().pid());
-        p.setRootUri(getApplicationDir(appPath).toUri().toString());
-        p.setCapabilities(new ClientCapabilities());
-
-        String bundlePath = String.format("[\"%s\"]", Paths.get(jdtLsPath, "java-analyzer-bundle", "java-analyzer-bundle.core", "target", "java-analyzer-bundle.core-1.0.0-SNAPSHOT.jar"));
-        logger.infof("bundle path is %s", bundlePath);
-
-        String json = String.format("""
-            {
-               "bundles": %s
-            }""", bundlePath);
-        logger.infof("initializationOptions: %s", json);
-
-        Object initializationOptions = new Gson().fromJson(json, JsonObject.class);
-        p.setInitializationOptions(initializationOptions);
-
-        future = remoteProxy.initialize(p);
-        future.get(TIMEOUT, TimeUnit.MILLISECONDS).toString();
-
-        InitializedParams initialized = new InitializedParams();
-        remoteProxy.initialized(initialized);
-    }
-
-    private void analyze() throws IOException {
-        List<Rule> rules = parseRulesFromFolder(rulesPath);
-        for (Rule rule : rules) {
-            executeLsCmd(future, remoteProxy, rule.withLsCmd(lsCmd));
-        }
-    }
-
     public static void main(String[] args) throws Exception {
         JdtlsAndClient client = new JdtlsAndClient();
         client.initProperties();
@@ -89,26 +56,6 @@ public class JdtlsAndClient {
         client.createLaunchLsClient();
         client.initLanguageServer();
         client.analyze();
-    }
-
-    // Create and launch the LS client able to talk to the LS server
-    private void createLaunchLsClient() {
-        ExecutorService executor;
-
-        logger.info("Connecting to the JDT Language Server ...");
-
-        executor = Executors.newSingleThreadExecutor();
-        LSClient client = new LSClient();
-
-        launcher = LSPLauncher.createClientLauncher(
-            client,
-            process.getInputStream(),
-            process.getOutputStream(),
-            executor,
-            (writer) -> writer // No-op, we don't want to wrap the writer
-        );
-
-        launcher.startListening();
     }
 
     private void initProperties() {
@@ -144,15 +91,31 @@ public class JdtlsAndClient {
         logger.infof("LS_CMD: %s", lsCmd);
     }
 
-    private Path resolvePath(String pathString) {
-        Path path = Paths.get(pathString);
-        if (path.isAbsolute()) {
-            return path;
-        } else {
-            // Resolve relative paths from current working directory
-            Path currentDir = Paths.get(System.getProperty("user.dir"));
-            return currentDir.resolve(pathString).normalize().toAbsolutePath();
-        }
+    private void initLanguageServer() throws Exception {
+        remoteProxy = launcher.getRemoteProxy();
+
+        InitializeParams p = new InitializeParams();
+        p.setProcessId((int) ProcessHandle.current().pid());
+        p.setRootUri(getApplicationDir(appPath).toUri().toString());
+        p.setCapabilities(new ClientCapabilities());
+
+        String bundlePath = String.format("[\"%s\"]", Paths.get(jdtLsPath, "java-analyzer-bundle", "java-analyzer-bundle.core", "target", "java-analyzer-bundle.core-1.0.0-SNAPSHOT.jar"));
+        logger.infof("bundle path is %s", bundlePath);
+
+        String json = String.format("""
+            {
+               "bundles": %s
+            }""", bundlePath);
+        logger.infof("initializationOptions: %s", json);
+
+        Object initializationOptions = new Gson().fromJson(json, JsonObject.class);
+        p.setInitializationOptions(initializationOptions);
+
+        future = remoteProxy.initialize(p);
+        future.get(TIMEOUT, TimeUnit.MILLISECONDS).toString();
+
+        InitializedParams initialized = new InitializedParams();
+        remoteProxy.initialized(initialized);
     }
 
     private void launchLsProcess() {
@@ -205,5 +168,31 @@ public class JdtlsAndClient {
             System.exit(1);
         }
 
+    }
+
+    private void createLaunchLsClient() {
+        ExecutorService executor;
+
+        logger.info("Connecting to the JDT Language Server ...");
+
+        executor = Executors.newSingleThreadExecutor();
+        LSClient client = new LSClient();
+
+        launcher = LSPLauncher.createClientLauncher(
+            client,
+            process.getInputStream(),
+            process.getOutputStream(),
+            executor,
+            (writer) -> writer // No-op, we don't want to wrap the writer
+        );
+
+        launcher.startListening();
+    }
+
+    private void analyze() throws IOException {
+        List<Rule> rules = parseRulesFromFolder(rulesPath);
+        for (Rule rule : rules) {
+            executeLsCmd(future, remoteProxy, rule.withLsCmd(lsCmd));
+        }
     }
 }

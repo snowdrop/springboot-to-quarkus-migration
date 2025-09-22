@@ -64,24 +64,24 @@ public class LsSearchService {
         List<Object> cmdArguments = List.of(paramsMap);
 
         factory.future
-            .thenRunAsync(() -> executeCmd(factory.lsCmd, cmdArguments, factory.remoteProxy))
+            .thenRunAsync(() -> executeCmd(factory, rule, cmdArguments))
             .exceptionally(throwable -> {
                 logger.errorf("Error executing LS command for rule %s: %s", rule.ruleID(), throwable.getMessage(), throwable);
                 return null;
             });
     }
 
-    public static void executeCmd(String customCmd, List<Object> arguments, LanguageServer LS) {
+    public static void executeCmd(JdtLsFactory factory, Rule rule, List<Object> arguments) {
         List<Object> cmdArguments = (arguments != null && !arguments.isEmpty())
             ? arguments
             : Collections.EMPTY_LIST;
 
         ExecuteCommandParams commandParams = new ExecuteCommandParams(
-            customCmd,
+            factory.lsCmd,
             cmdArguments
         );
 
-        CompletableFuture<Object> commandResult = LS.getWorkspaceService()
+        CompletableFuture<Object> commandResult = factory.remoteProxy.getWorkspaceService()
             .executeCommand(commandParams)
             .exceptionally( t -> {
                     t.printStackTrace();
@@ -93,9 +93,8 @@ public class LsSearchService {
         List<SymbolInformation> symbolInformationList = new ArrayList<>();
 
         if (result != null) {
-            logger.infof("==== CLIENT: --- Search Results using as command: %s.", customCmd);
-            // TODO This code should be reviewed to adapt it according to the objects returned as response
-            logger.infof("==== CLIENT: --- Result: %s", gson.toJson(result));
+            logger.infof("==== CLIENT: --- Search Results found for rule: %s.", rule.ruleID());
+            logger.infof("==== CLIENT: --- JSON response: %s",gson.toJson(result));
 
             // Following the Konveyor approach to create SymbolInformation objects
             try {
@@ -155,12 +154,12 @@ public class LsSearchService {
                 Map<String, Object> args = (Map<String, Object>) arguments.get(0);
                 logger.infof("==== CLIENT: Found %s usage(s) of symbol: %s, name: %s", symbolInformationList.size(), getLocationName(args.get("location").toString()),args.get("query"));
                 for (SymbolInformation si : symbolInformationList) {
-                    logger.infof("==== CLIENT: Found %s at: %s (line %s, char: %s - %s)",
+                    logger.infof("==== CLIENT: Found %s at line %s, char: %s - %s within the file: %s)",
                         si.getName(),
-                        si.getLocation().getUri(),
                         si.getLocation().getRange().getStart().getLine() + 1,
                         si.getLocation().getRange().getStart().getCharacter(),
-                        si.getLocation().getRange().getEnd().getCharacter()
+                        si.getLocation().getRange().getEnd().getCharacter(),
+                        si.getLocation().getUri()
                     );
                 }
             }

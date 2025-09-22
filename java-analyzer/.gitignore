@@ -1,8 +1,0 @@
-/jdt-ls/
-.DS_Store
-target
-cp.txt
-/example/.settings/
-/example/.classpath
-/example/.project
-/jdt/

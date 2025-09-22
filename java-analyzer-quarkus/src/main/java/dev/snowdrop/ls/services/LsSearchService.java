@@ -93,6 +93,7 @@ public class LsSearchService {
         List<SymbolInformation> symbolInformationList = new ArrayList<>();
 
         if (result != null) {
+            logger.infof("==== CLIENT: --- Command params: %s.", commandParams);
             logger.infof("==== CLIENT: --- Search Results found for rule: %s.", rule.ruleID());
             logger.infof("==== CLIENT: --- JSON response: %s",gson.toJson(result));
 

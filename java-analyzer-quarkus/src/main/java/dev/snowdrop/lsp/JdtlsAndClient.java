@@ -1,6 +1,7 @@
 package dev.snowdrop.lsp;
 
 import com.google.gson.Gson;
+import dev.snowdrop.lsp.common.utils.FileUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import com.google.gson.JsonObject;
 import dev.snowdrop.lsp.common.utils.LSClient;
@@ -71,7 +72,7 @@ public class JdtlsAndClient {
         String appPathString = Optional
             .ofNullable(System.getProperty("APP_PATH"))
             .orElse("applications/spring-boot-todo-app");
-        appPath = resolvePath(appPathString).toString();
+        appPath = appPathString;
 
         String rulesPathString = Optional
             .ofNullable(System.getProperty("RULES_PATH"))
@@ -95,7 +96,7 @@ public class JdtlsAndClient {
 
         InitializeParams p = new InitializeParams();
         p.setProcessId((int) ProcessHandle.current().pid());
-        p.setRootUri(appPath);
+        p.setRootUri(FileUtils.getApplicationDir(appPath.toString()).toUri().toString());
         p.setCapabilities(new ClientCapabilities());
 
         String bundlePath = String.format("[\"%s\"]", Paths.get(jdtLsPath, "java-analyzer-bundle", "java-analyzer-bundle.core", "target", "java-analyzer-bundle.core-1.0.0-SNAPSHOT.jar"));

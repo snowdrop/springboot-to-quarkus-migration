@@ -8,11 +8,10 @@ import dev.snowdrop.lsp.common.utils.YamlRuleParser;
 import dev.snowdrop.lsp.common.services.LsSearchService;
 import dev.snowdrop.lsp.model.Rule;
 import dev.snowdrop.lsp.JdtlsAndClient;
+import org.jboss.logging.Logger;
 import picocli.CommandLine;
 import org.eclipse.lsp4j.*;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.eclipse.lsp4j.launch.LSPLauncher;
 import org.eclipse.lsp4j.services.LanguageServer;
@@ -36,13 +35,13 @@ import java.util.concurrent.TimeUnit;
 )
 public class AnalyzeCommand implements Runnable {
 
-    private static final Logger logger = LoggerFactory.getLogger(AnalyzeCommand.class);
+    private static final Logger logger = Logger.getLogger(AnalyzeCommand.class);
 
     @CommandLine.Parameters(
         index = "0",
         description = "Path to the Java project to analyze"
     )
-    private String projectPath;
+    String appPath;
 
     @CommandLine.Option(
         names = {"-r", "--rules"},
@@ -90,12 +89,10 @@ public class AnalyzeCommand implements Runnable {
 
     @Override
     public void run() {
-        logger.info("🔍 Analyzing Spring Boot project: {}", projectPath);
-
         // Validate project path
-        Path path = Paths.get(projectPath);
+        Path path = Paths.get(appPath);
         if (!path.toFile().exists()) {
-            logger.error("❌ Project path does not exist: {}", projectPath);
+            logger.errorf("❌ Project path of the application does not exist: %s", appPath);
             return;
         }
 
@@ -113,31 +110,30 @@ public class AnalyzeCommand implements Runnable {
                 logger.warn("⚠️  This doesn't appear to be a Spring Boot project.");
             }
         } catch (Exception e) {
-            logger.error("❌ Error reading pom.xml: {}", e.getMessage());
+            logger.errorf("❌ Error reading pom.xml: %s", e.getMessage());
             return;
         }
 
-        logger.info("✅ Maven project detected");
-        logger.info("✅ Spring Boot dependencies found");
+        logger.infof("✅ Maven project detected");
+        logger.infof("✅ Spring Boot dependencies found");
 
         // Start JDT-LS and analyze with rules
         try {
-            startJdtAnalysis(path);
+            startJdtAnalysis();
         } catch (Exception e) {
-            logger.error("❌ Error during JDT analysis: {}", e.getMessage());
+            logger.errorf("❌ Error during JDT analysis: %s", e.getMessage());
             if (verbose) {
-                logger.error("Stack trace:", e);
+                e.printStackTrace();
             }
         }
 
-        logger.info("\n📊 Analysis Summary:");
-        logger.info("- Project type: Maven");
-        logger.info("- Migration: Ready for next step");
+        logger.infof("\n📊 Analysis Summary:");
+        logger.infof("- Migration: Ready for next step");
     }
 
-    private void startJdtAnalysis(Path projectPath) throws Exception {
-        logger.info("\n🚀 Starting JDT Language Server analysis...");
-        logger.info("📋 Raw Configuration: JDT-LS path: {}, Workspace: {}, Rules: {}", jdtLsPath, jdtWorkspace, rulesPath);
+    private void startJdtAnalysis() throws Exception {
+        logger.infof("\n🚀 Starting JDT Language Server analysis...");
+        logger.infof("📋 Configuration: JDT-LS path: %s, JDT Workspace: %s, Rules: %s & Application to scan: %s", jdtLsPath, jdtWorkspace, rulesPath, appPath);
 
         // Validate input values
         if (jdtLsPath == null) {
@@ -149,21 +145,21 @@ public class AnalyzeCommand implements Runnable {
         if (rulesPath == null) {
             throw new Exception("Rules path is null");
         }
-        if (projectPath == null) {
+        if (appPath == null) {
             throw new Exception("Project path is null");
         }
 
         // Resolve paths before setting system properties
         String resolvedJdtLsPath = resolvePath(jdtLsPath).toString();
         String resolvedJdtWorkspace = resolvePath(jdtWorkspace).toString();
-        String resolvedProjectPath = resolvePath(projectPath.toString()).toString();
+        String resolvedProjectPath = resolvePath(appPath.toString()).toString();
         String resolvedRulesPath = resolvePath(rulesPath).toString();
 
         // Log resolved paths for debugging
-        logger.info("📋 Resolved JDT-LS path: {}", resolvedJdtLsPath);
-        logger.info("📋 Resolved workspace: {}", resolvedJdtWorkspace);
-        logger.info("📋 Resolved project path: {}", resolvedProjectPath);
-        logger.info("📋 Resolved rules path: {}", resolvedRulesPath);
+        logger.infof("📋 Resolved JDT-LS path: %s", resolvedJdtLsPath);
+        logger.infof("📋 Resolved workspace: %s", resolvedJdtWorkspace);
+        logger.infof("📋 Resolved project path: %s", resolvedProjectPath);
+        logger.infof("📋 Resolved rules path: %s", resolvedRulesPath);
 
         // Set system properties for JDT-LS
         System.setProperty("JDT_LS_PATH", resolvedJdtLsPath);
@@ -173,48 +169,48 @@ public class AnalyzeCommand implements Runnable {
 
         // Set LS_CMD in JdtlsAndClient from configuration
         JdtlsAndClient.LS_CMD = lsCommand;
-        logger.info("📋 LS_CMD set to: {}", JdtlsAndClient.LS_CMD);
+        logger.infof("📋 LS_CMD set to: %s", JdtlsAndClient.LS_CMD);
 
         // Parse rules
-        logger.info("📋 Loading migration rules...");
+        logger.infof("📋 Loading migration rules...");
         List<Rule> rules = loadRules();
-        logger.info("Found {} rules to execute", rules.size());
+        logger.infof("Found %s rules to execute", rules.size());
 
         if (rules.isEmpty()) {
-            logger.info("⚠️  No rules found, skipping JDT-LS analysis");
+            logger.infof("⚠️  No rules found, skipping JDT-LS analysis");
             return;
         }
 
         try {
             // Launch JDT-LS process
-            logger.info("🚀 Starting JDT Language Server process...");
+            logger.infof("🚀 Starting JDT Language Server process...");
             launchJdtProcess();
 
             // Create and launch the LS client
-            logger.info("🔌 Connecting to JDT Language Server...");
+            logger.infof("🔌 Connecting to JDT Language Server...");
             createLaunchLsClient();
 
             remoteProxy = launcher.getRemoteProxy();
 
             // Initialize the language server
-            logger.info("⚙️  Initializing JDT Language Server...");
-            CompletableFuture<InitializeResult> future = initializeLanguageServer(projectPath);
+            logger.infof("⚙️  Initializing JDT Language Server...");
+            CompletableFuture<InitializeResult> future = initializeLanguageServer(appPath);
 
             // Execute rules analysis
-            logger.info("🔍 Executing {} rules...", rules.size());
+            logger.infof("🔍 Executing %s rules...", rules.size());
             for (Rule rule : rules) {
-                logger.info("\n🔍 Executing rule: {}", rule.ruleID());
+                logger.infof("\n🔍 Executing rule: %s", rule.ruleID());
                 executeRule(future, rule);
             }
 
             // Wait a bit for async LS commands to complete
-            logger.info("⏳ Waiting for LS commands to complete...");
+            logger.infof("⏳ Waiting for LS commands to complete...");
             Thread.sleep(5000); // Give time for async operations to complete
 
         } finally {
             // Clean up
             if (jdtProcess != null && jdtProcess.isAlive()) {
-                logger.info("🛑 Shutting down JDT Language Server...");
+                logger.infof("🛑 Shutting down JDT Language Server...");
                 jdtProcess.destroyForcibly();
             }
         }
@@ -225,13 +221,13 @@ public class AnalyzeCommand implements Runnable {
             String resolvedRulesPath = System.getProperty("RULES_PATH");
             File rulesDir = new File(resolvedRulesPath);
             if (!rulesDir.exists()) {
-                logger.error("⚠️  Rules directory not found: {}", resolvedRulesPath);
+                logger.errorf("⚠️  Rules directory not found: %s", resolvedRulesPath);
                 return List.of();
             }
 
             return YamlRuleParser.parseRulesFromFolder(rulesDir.toPath());
         } catch (Exception e) {
-            logger.error("❌ Error loading rules: {}", e.getMessage());
+            logger.errorf("❌ Error loading rules: %s", e.getMessage());
             return List.of();
         }
     }
@@ -239,36 +235,36 @@ public class AnalyzeCommand implements Runnable {
     private void executeRule(CompletableFuture<InitializeResult> future, Rule rule) {
         try {
             if (verbose) {
-                logger.info("  Rule description: {}", rule.message());
-                logger.info("  Effort: {}", rule.effort());
+                logger.infof("  Rule description: %s", rule.message());
+                logger.infof("  Effort: %s", rule.effort());
             }
 
-            logger.info("  📋 Executing rule: {}", rule.message());
+            logger.infof("  📋 Executing rule: %s", rule.message());
 
             // Check if rule has any java.referenced conditions (single, OR, or AND)
             boolean hasJavaReferenced = false;
             if (rule.when() != null) {
                 if (rule.when().javaReferenced() != null) {
-                    logger.info("  🔍 Single condition - Pattern: {}", rule.when().javaReferenced().pattern());
-                    logger.info("  📍 Location: {}", rule.when().javaReferenced().location());
+                    logger.infof("  🔍 Single condition - Pattern: %s", rule.when().javaReferenced().pattern());
+                    logger.infof("  📍 Location: %s", rule.when().javaReferenced().location());
                     hasJavaReferenced = true;
                 } else if (rule.when().or() != null && !rule.when().or().isEmpty()) {
-                    logger.info("  🔍 OR conditions found: {} conditions", rule.when().or().size());
+                    logger.infof("  🔍 OR conditions found: %s conditions", rule.when().or().size());
                     for (int i = 0; i < rule.when().or().size(); i++) {
                         var condition = rule.when().or().get(i);
                         if (condition.javaReferenced() != null) {
-                            logger.info("    OR[{}] Pattern: {}", i, condition.javaReferenced().pattern());
-                            logger.info("    OR[{}] Location: {}", i, condition.javaReferenced().location());
+                            logger.infof("    OR[%s] Pattern: %s", i, condition.javaReferenced().pattern());
+                            logger.infof("    OR[%s] Location: %s", i, condition.javaReferenced().location());
                         }
                     }
                     hasJavaReferenced = true;
                 } else if (rule.when().and() != null && !rule.when().and().isEmpty()) {
-                    logger.info("  🔍 AND conditions found: {} conditions", rule.when().and().size());
+                    logger.infof("  🔍 AND conditions found: %s conditions", rule.when().and().size());
                     for (int i = 0; i < rule.when().and().size(); i++) {
                         var condition = rule.when().and().get(i);
                         if (condition.javaReferenced() != null) {
-                            logger.info("    AND[{}] Pattern: {}", i, condition.javaReferenced().pattern());
-                            logger.info("    AND[{}] Location: {}", i, condition.javaReferenced().location());
+                            logger.infof("    AND[%s] Pattern: %s", i, condition.javaReferenced().pattern());
+                            logger.infof("    AND[%s] Location: %s", i, condition.javaReferenced().location());
                         }
                     }
                     hasJavaReferenced = true;
@@ -278,18 +274,18 @@ public class AnalyzeCommand implements Runnable {
             if (hasJavaReferenced) {
                 // Check if JDT process is still alive before executing LS command
                 if (jdtProcess != null && jdtProcess.isAlive()) {
-                    logger.info("  🚀 Executing LS command (JDT process alive)");
+                    logger.infof("  🚀 Executing LS command (JDT process alive)");
                     // Execute the actual LS command
                     LsSearchService.executeLsCmd(future, remoteProxy, rule.withLsCmd(JdtlsAndClient.LS_CMD));
                 } else {
                     logger.error("  ❌ JDT process is dead, cannot execute LS command");
                 }
             } else {
-                logger.info("  ⚠️  Rule has no java.referenced conditions");
+                logger.infof("  ⚠️  Rule has no java.referenced conditions");
             }
 
         } catch (Exception e) {
-            logger.error("  ❌ Error executing rule: {}", e.getMessage());
+            logger.errorf("  ❌ Error executing rule: %s", e.getMessage());
             if (verbose) {
                 logger.error("Stack trace:", e);
             }
@@ -301,18 +297,18 @@ public class AnalyzeCommand implements Runnable {
         String resolvedJdtLsPath = System.getProperty("JDT_LS_PATH");
         String resolvedJdtWorkspace = System.getProperty("JDT_WKS");
 
-        logger.info("📋 Launching JDT with resolved paths - LS: {}, Workspace: {}", resolvedJdtLsPath, resolvedJdtWorkspace);
+        logger.infof("📋 Launching JDT with resolved paths - LS: %s, Workspace: %s", resolvedJdtLsPath, resolvedJdtWorkspace);
 
         Path wksDir = Paths.get(resolvedJdtWorkspace);
 
         String os = System.getProperty("os.name").toLowerCase();
-        logger.info("📋 Detected OS: {}", os);
+        logger.infof("📋 Detected OS: %s", os);
 
         Path configPath = os.contains("win") ? Paths.get(resolvedJdtLsPath, "config_win") :
             os.contains("mac") ? Paths.get(resolvedJdtLsPath, "config_mac_arm") :
                 Paths.get(resolvedJdtLsPath, "config_linux");
 
-        logger.info("📋 Config path: {}", configPath);
+        logger.infof("📋 Config path: %s", configPath);
 
         if (!configPath.toFile().exists()) {
             throw new Exception("JDT-LS config directory does not exist: " + configPath);
@@ -330,7 +326,7 @@ public class AnalyzeCommand implements Runnable {
         }
 
         String launcherJar = launcherFiles[0].getName();
-        logger.info("📋 Using launcher jar: {}", launcherJar);
+        logger.infof("📋 Using launcher jar: %s", launcherJar);
 
         ProcessBuilder pb = new ProcessBuilder(
             "java",
@@ -361,7 +357,7 @@ public class AnalyzeCommand implements Runnable {
 
         try {
             jdtProcess = pb.start();
-            logger.info("✅ JDT Language Server process started with PID: {}", jdtProcess.pid());
+            logger.infof("✅ JDT Language Server process started with PID: %s", jdtProcess.pid());
 
             // Add a small delay to ensure the process is fully started
             Thread.sleep(2000);
@@ -388,10 +384,10 @@ public class AnalyzeCommand implements Runnable {
         );
 
         launcher.startListening();
-        logger.info("✅ LSP client connected and listening");
+        logger.infof("✅ LSP client connected and listening");
     }
 
-    private CompletableFuture<InitializeResult> initializeLanguageServer(Path projectPath) throws Exception {
+    private CompletableFuture<InitializeResult> initializeLanguageServer(String projectPath) throws Exception {
         InitializeParams p = new InitializeParams();
         p.setProcessId((int) ProcessHandle.current().pid());
         p.setRootUri(FileUtils.getApplicationDir(projectPath.toString()).toUri().toString());
@@ -415,12 +411,12 @@ public class AnalyzeCommand implements Runnable {
         InitializedParams initialized = new InitializedParams();
         remoteProxy.initialized(initialized);
 
-        logger.info("✅ JDT Language Server initialized");
+        logger.infof("✅ JDT Language Server initialized");
         return future;
     }
 
     private Path resolvePath(String pathString) {
-        logger.debug("📋 Resolving path: {}", pathString);
+        logger.debugf("📋 Resolving path: %s", pathString);
 
         if (pathString == null) {
             throw new IllegalArgumentException("Path string cannot be null");
@@ -428,12 +424,12 @@ public class AnalyzeCommand implements Runnable {
 
         Path path = Paths.get(pathString);
         if (path.isAbsolute()) {
-            logger.debug("📋 Path is already absolute: {}", path);
+            logger.debugf("📋 Path is already absolute: %s", path);
             return path;
         } else {
             // Resolve relative paths from user.dir
             Path resolved = Paths.get(System.getProperty("user.dir"), pathString);
-            logger.debug("📋 Resolved relative path '{}' to: {}", pathString, resolved);
+            logger.debugf("📋 Resolved relative path '%s' to: %s", pathString, resolved);
             return resolved;
         }
     }

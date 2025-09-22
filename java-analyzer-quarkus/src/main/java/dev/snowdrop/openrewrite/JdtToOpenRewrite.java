@@ -151,7 +151,6 @@ class ChangeSpringBootToQuarkusRecipe extends Recipe {
         return new JavaIsoVisitor<>() {
             @Override
             public J.CompilationUnit visitCompilationUnit(J.CompilationUnit cu, ExecutionContext ctx) {
-                // First visit the compilation unit to handle imports
                 J.CompilationUnit c = super.visitCompilationUnit(cu, ctx);
 
                 // Check if we made any annotation changes and handle imports accordingly
@@ -188,6 +187,7 @@ class ChangeSpringBootToQuarkusRecipe extends Recipe {
                     m.getSelect().toString().equals("SpringApplication") &&
                     m.getSimpleName().equals("run")) {
 
+                    // Replace the code with Quarkus run
                     return JavaTemplate.builder("Quarkus.run(#{any(java.lang.Class)}, #{any(java.lang.String[])})")
                         .javaParser(JavaParser.fromJavaVersion().classpath("quarkus-core"))
                         .imports("io.quarkus.runtime.Quarkus")

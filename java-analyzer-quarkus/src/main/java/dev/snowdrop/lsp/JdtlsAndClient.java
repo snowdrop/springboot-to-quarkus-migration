@@ -28,7 +28,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static dev.snowdrop.lsp.common.services.LsSearchService.executeLsCmd;
-import static dev.snowdrop.lsp.common.utils.FileUtils.getApplicationDir;
 import static dev.snowdrop.lsp.common.utils.FileUtils.resolvePath;
 import static dev.snowdrop.lsp.common.utils.YamlRuleParser.parseRulesFromFolder;
 
@@ -96,7 +95,7 @@ public class JdtlsAndClient {
 
         InitializeParams p = new InitializeParams();
         p.setProcessId((int) ProcessHandle.current().pid());
-        p.setRootUri(getApplicationDir(appPath).toUri().toString());
+        p.setRootUri(appPath);
         p.setCapabilities(new ClientCapabilities());
 
         String bundlePath = String.format("[\"%s\"]", Paths.get(jdtLsPath, "java-analyzer-bundle", "java-analyzer-bundle.core", "target", "java-analyzer-bundle.core-1.0.0-SNAPSHOT.jar"));

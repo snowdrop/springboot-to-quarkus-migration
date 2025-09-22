@@ -87,8 +87,6 @@ public class JdtToOpenRewrite {
         System.out.println("-----------------------------------------\n");
 
         // --- 4. PREPARE AND APPLY THE OPENREWRITE RECIPE ---
-
-        // The recipe will specifically target the annotation found by JDT-LS
         Recipe recipe = new ChangeSpringBootToQuarkusRecipe(jdtResult.name());
         ExecutionContext ctx = new InMemoryExecutionContext(Throwable::printStackTrace);
 

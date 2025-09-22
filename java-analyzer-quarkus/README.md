@@ -61,12 +61,12 @@ mvn quarkus:dev -Dquarkus.args="analyze ./applications/spring-boot-todo-app"
 
 OR
 
-
+java -jar target/quarkus-app/quarkus-run.jar analyze ./applications/spring-boot-todo-app
 ```
 
 You can check the log of the server from the parent folder within: `.jdt_workspace/.metadata/.log` !
 
-## Start using the JdtlsFactory MAin application
+## Start using the JdtlsFactory Main application
 
 Before to run the server and client, configure the following system properties or override the Quarkus properties[application.properties](src/main/resources/application.properties):
 - `JDT_WKS`: Path of the folder containing the jdt-ls workspace, .metadata and log. Default: `./jdt/`

@@ -126,7 +126,6 @@ public class TransformCommand implements Runnable {
      */
     private List<Path> discoverJavaFiles(Path projectPath) {
         try {
-            // Look for .java files in common Maven source directories
             Path mainJavaDir = projectPath.resolve("src/main/java");
             Path testJavaDir = projectPath.resolve("src/test/java");
 

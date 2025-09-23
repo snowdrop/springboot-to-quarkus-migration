@@ -97,7 +97,7 @@ public class ApplyOpenRewriteRecipe {
         System.out.println(sourceCode);
         System.out.println("-----------------------------------------\n");
 
-        Recipe recipe = new SpringBootToQuarkusRecipe(result.name());
+        Recipe recipe = new SpringBootToQuarkusRecipe();
         ExecutionContext ctx = new InMemoryExecutionContext(Throwable::printStackTrace);
 
         // Parse the source file into OpenRewrite's format (LST)

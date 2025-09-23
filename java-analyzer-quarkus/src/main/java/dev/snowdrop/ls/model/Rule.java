@@ -23,17 +23,47 @@ public record Rule(
     }
 
     public record When(
-        @JsonProperty("java.referenced") JavaReferenced javaReferenced,
-        @JsonProperty("or") List<WhenCondition> or,
-        @JsonProperty("and") List<WhenCondition> and
+        @JsonProperty("java.referenced")
+        JavaReferenced javaReferenced,
+        @JsonProperty("or")
+        List<Condition> or,
+        @JsonProperty("and")
+        List<Condition> and
+    ) {}
+
+    public record Condition(
+        @JsonProperty("java.dependency")
+        JavaDependency javaDependency,
+
+        @JsonProperty("java.referenced")
+        JavaReferenced javaReferenced,
+        String as,
+        String from,
+        String not,
+        String ignore
     ) {}
 
     public record JavaReferenced(
         String location,
-        String pattern
+        String pattern,
+        String filepaths,
+        String annotated
     ) {}
 
-    public record WhenCondition(
-        @JsonProperty("java.referenced") JavaReferenced javaReferenced
+    public record Annotated(
+        String pattern,
+        List<Element> elements
+    ) {}
+    
+    public record Element(
+        String name,
+        String value
+    ) {}
+
+    public record JavaDependency(
+        String lowerbound,
+        String upperbound,
+        String name,
+        String nameregex
     ) {}
 }

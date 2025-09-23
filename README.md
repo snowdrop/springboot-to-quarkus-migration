@@ -202,8 +202,9 @@ TO BE CONTINUED !
 - https://www.the-main-thread.com/p/spring-to-quarkus-move-your-java
 - https://www.the-main-thread.com/p/spring-to-quarkus-migration-guide
 
-4. Openrewrite
+4. Openrewrite & migration tools
 
+- SpringBoot migration tool using YAML actions definition to generate recipes from project converted to AST: https://github.com/spring-projects-experimental/spring-boot-migrator/?tab=readme-ov-file
 - In depth covering of openrewrite features: https://github.com/SimonVerhoeven/openrewrite-demo
 - Quarkus 1.x to 2.x: https://docs.openrewrite.org/running-recipes/popular-recipe-guides/quarkus-2.x-migration-from-quarkus-1.x
 - Spring Boot 2.x to 3.x: https://docs.openrewrite.org/running-recipes/popular-recipe-guides/migrate-to-spring-3

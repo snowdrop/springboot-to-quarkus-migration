@@ -16,9 +16,14 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 public class JdtToOpenRewrite {
+
+    private static Instant start;
+    private static Instant finish;
 
     private static final String JDT_LS_JSON_RESPONSE = """
     [
@@ -37,13 +42,13 @@ public class JdtToOpenRewrite {
     ]
     """;
 
-    // --- A record to model the structure of the JSON response, now with SymbolKind ---
     public record JdtLocation(String uri, Object range) {}
     public record JdtResult(String name, SymbolKind kind, JdtLocation location, String containerName) {}
 
     public static void main(String[] args) {
 
-        // Create a GsonBuilder and register our custom deserializer for SymbolKind
+        start = Instant.now();
+
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(SymbolKind.class, new SymbolKindDeserializer());
         Gson gson = gsonBuilder.create();
@@ -59,16 +64,12 @@ public class JdtToOpenRewrite {
         JdtResult target = jdtResults.get(0);
         System.out.println("JDT-LS found symbol '" + target.name() + "' with kind: " + target.kind());
 
-
-        // --- 3. RUN THE TRANSFORMATION ---
-        // We take the first result as our target for this example
         runOpenRewriteTransformation(target);
     }
 
     private static void runOpenRewriteTransformation(JdtResult jdtResult) {
         String sourceCode;
         try {
-            // --- DYNAMICALLY READ THE FILE CONTENT FROM THE URI ---
             URI fileUri = new URI(jdtResult.location().uri());
             Path filePath = Paths.get(fileUri);
 
@@ -86,7 +87,6 @@ public class JdtToOpenRewrite {
         System.out.println(sourceCode);
         System.out.println("-----------------------------------------\n");
 
-        // --- 4. PREPARE AND APPLY THE OPENREWRITE RECIPE ---
         Recipe recipe = new ChangeSpringBootToQuarkusRecipe(jdtResult.name());
         ExecutionContext ctx = new InMemoryExecutionContext(Throwable::printStackTrace);
 
@@ -98,18 +98,21 @@ public class JdtToOpenRewrite {
             .map(J.CompilationUnit.class::cast)
             .orElseThrow(() -> new IllegalArgumentException("Could not parse source code."));
 
-        // Run the recipe on the parsed code
         J.CompilationUnit transformedCu = (J.CompilationUnit) recipe.getVisitor().visit(cu, ctx);
 
         if (transformedCu == cu) {
             System.out.println("Recipe did not make any changes.");
         } else {
-            // --- 5. SHOW THE RESULT ---
             String transformedCode = transformedCu.printAll();
             System.out.println("--- SOURCE CODE AFTER TRANSFORMATION ---");
             System.out.println(transformedCode);
             System.out.println("----------------------------------------");
         }
+
+        finish = Instant.now();
+        long timeElapsed = Duration.between(start, finish).toMillis();
+        System.out.println("--- Elapsed time: " + timeElapsed + " ms ---");
+
     }
 }
 

@@ -12,20 +12,21 @@ public class SpringBootToQuarkusRecipe extends Recipe {
 
     @Override
     public String getDisplayName() {
-        return "Replace @SpringBootApplication with @QuarkusMain Annotation";
+        return "Convert @SpringBootApplication with @QuarkusMain Annotation";
     }
 
     @Override
     public String getDescription() {
-        return "Replace @SpringBootApplication with @QuarkusMain Annotation, removes the old import and add the new one.";
+        return "Convert @SpringBootApplication with @QuarkusMain Annotation, removes the old import and add the new one.";
     }
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
         return Preconditions.check(
             Preconditions.or(
-                new UsesType<>("org.springframework.boot.autoconfigure.SpringBootApplication", false)
-            ), Repeat.repeatUntilStable(new SpringBootToQuarkusMainVisitor()));
+                new UsesType<>("org.springframework.boot.autoconfigure.SpringBootApplication", null)
+            ),
+            new SpringBootToQuarkusMainVisitor());
     }
 
     private static class SpringBootToQuarkusMainVisitor extends JavaIsoVisitor<ExecutionContext> {

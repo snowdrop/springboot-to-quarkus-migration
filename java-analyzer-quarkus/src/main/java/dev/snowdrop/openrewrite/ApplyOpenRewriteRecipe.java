@@ -61,18 +61,19 @@ public class ApplyOpenRewriteRecipe {
         try {
             results = objectMapper.readValue(JDT_LS_JSON_RESPONSE, resultListType);
         } catch (Exception e) {
-            System.err.println("Failed to parse JDT-LS JSON response: " + e.getMessage());
+            System.err.println("Failed to parse jdt language server JSON response: " + e.getMessage());
             return;
         }
 
         if (results.isEmpty()) {
-            System.out.println("No annotations found by JDT-LS.");
+            System.out.println("No result found !!");
             return;
         }
 
         Result target = results.get(0);
-        System.out.println("JDT-LS found symbol '" + target.name() + "' with kind: " + target.kind());
+        System.out.println("Found symbol '" + target.name() + "' with kind: " + target.kind() + " within the json string");
 
+        // Apply the Openrewrite transformation
         runOpenRewriteTransformation(target);
     }
 

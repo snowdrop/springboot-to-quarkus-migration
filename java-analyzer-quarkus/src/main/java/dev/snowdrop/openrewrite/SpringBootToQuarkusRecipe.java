@@ -34,7 +34,6 @@ public class SpringBootToQuarkusRecipe extends Recipe {
             return super.visitCompilationUnit(cu, ctx);
         }
 
-
         @Override
         public J.Annotation visitAnnotation(J.Annotation annotation, ExecutionContext ctx) {
             J.Annotation a = super.visitAnnotation(annotation, ctx);

@@ -10,7 +10,6 @@ import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.SymbolKind;
-import org.eclipse.lsp4j.services.LanguageServer;
 import org.jboss.logging.Logger;
 
 import java.io.IOException;

@@ -150,7 +150,7 @@
                     <execution>
                         <id>rewrite</id>
                         <configuration>
-                            <mainClass>dev.snowdrop.openrewrite.JdtToOpenRewrite</mainClass>
+                            <mainClass>dev.snowdrop.openrewrite.ApplyOpenRewriteRecipe</mainClass>
                         </configuration>
                     </execution>
                 </executions>

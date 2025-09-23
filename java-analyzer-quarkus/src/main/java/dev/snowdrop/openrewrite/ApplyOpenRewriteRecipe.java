@@ -83,7 +83,7 @@ public class ApplyOpenRewriteRecipe {
             URI fileUri = new URI(result.location().uri());
             Path filePath = Paths.get(fileUri);
 
-            // Read the content from the file path identified by JDT-LS
+            // Read the content from the file
             sourceCode = Files.readString(filePath);
             System.out.println("\nSuccessfully read content from: " + filePath);
 

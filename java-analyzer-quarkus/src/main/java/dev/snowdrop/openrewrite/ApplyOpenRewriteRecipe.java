@@ -1,7 +1,8 @@
 package dev.snowdrop.openrewrite;
 
-import com.google.gson.*;
-import com.google.gson.reflect.TypeToken;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import dev.snowdrop.openrewrite.model.Result;
 import org.eclipse.lsp4j.SymbolKind;
 import org.openrewrite.ExecutionContext;
@@ -10,7 +11,6 @@ import org.openrewrite.Recipe;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.tree.J;
 
-import java.lang.reflect.Type;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,13 +49,21 @@ public class ApplyOpenRewriteRecipe {
 
         start = Instant.now();
 
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(SymbolKind.class, new SymbolKindDeserializer());
-        Gson gson = gsonBuilder.create();
+        // Configure Jackson ObjectMapper with custom SymbolKind deserializer
+        ObjectMapper objectMapper = new ObjectMapper();
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(SymbolKind.class, new SymbolKindDeserializer());
+        objectMapper.registerModule(module);
 
-        Type resultListType = new TypeToken<List<Result>>() {
-        }.getType();
-        List<Result> results = gson.fromJson(JDT_LS_JSON_RESPONSE, resultListType);
+        // Parse JSON using Jackson
+        TypeReference<List<Result>> resultListType = new TypeReference<List<Result>>() {};
+        List<Result> results;
+        try {
+            results = objectMapper.readValue(JDT_LS_JSON_RESPONSE, resultListType);
+        } catch (Exception e) {
+            System.err.println("Failed to parse JDT-LS JSON response: " + e.getMessage());
+            return;
+        }
 
         if (results.isEmpty()) {
             System.out.println("No annotations found by JDT-LS.");

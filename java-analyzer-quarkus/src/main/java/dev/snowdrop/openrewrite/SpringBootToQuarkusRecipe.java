@@ -57,12 +57,16 @@ public class SpringBootToQuarkusRecipe extends Recipe {
         @Override
         public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
             J.MethodInvocation m = super.visitMethodInvocation(method, ctx);
-            maybeAddImport("io.quarkus.runtime.Quarkus");
-            return JavaTemplate.builder("Quarkus.run(#{any(java.lang.String[])})")
-                .javaParser(JavaParser.fromJavaVersion().classpath("quarkus-core"))
-                .imports("io.quarkus.runtime.Quarkus")
-                .build()
-                .apply(getCursor(), m.getCoordinates().replace(), m.getArguments().get(1));
+            if (! m.getArguments().isEmpty() && m.getArguments().size() > 1) {
+                maybeAddImport("io.quarkus.runtime.Quarkus");
+                return JavaTemplate.builder("Quarkus.run(#{any(java.lang.String[])})")
+                    .javaParser(JavaParser.fromJavaVersion().classpath("quarkus-core"))
+                    .imports("io.quarkus.runtime.Quarkus")
+                    .build()
+                    .apply(getCursor(), m.getCoordinates().replace(), m.getArguments().get(1));
+            } else {
+                return m;
+            }
         }
     }
 }

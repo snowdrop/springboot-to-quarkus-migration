@@ -6,8 +6,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
 
-import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -68,27 +66,6 @@ public class AnalyzeCommand implements Runnable {
             return;
         }
 
-        // Check if it's a Maven project
-        File pomFile = path.resolve("pom.xml").toFile();
-        if (!pomFile.exists()) {
-            logger.error("❌ No pom.xml found. Only Maven projects are currently supported.");
-            return;
-        }
-
-        // Check if it's a Spring Boot project
-        try {
-            String pomContent = Files.readString(pomFile.toPath());
-            if (!pomContent.contains("spring-boot")) {
-                logger.warn("⚠️  This doesn't appear to be a Spring Boot project.");
-            }
-        } catch (Exception e) {
-            logger.errorf("❌ Error reading pom.xml: %s", e.getMessage());
-            return;
-        }
-
-        logger.infof("✅ Maven project detected");
-        logger.infof("✅ Spring Boot dependencies found");
-
         try {
             JdtLsFactory jdtLsFactory = new JdtLsFactory();
             jdtLsFactory.initProperties(this);
@@ -103,9 +80,6 @@ public class AnalyzeCommand implements Runnable {
                 e.printStackTrace();
             }
         }
-
-        logger.infof("\n📊 Analysis Summary:");
-        logger.infof("- Migration: Ready for next step");
     }
 
     private void startAnalyse(JdtLsFactory factory) throws Exception {
@@ -122,7 +96,7 @@ public class AnalyzeCommand implements Runnable {
             analyzeCodeFromRule(factory);
 
             logger.infof("⏳ Waiting for LS commands to complete...");
-            Thread.sleep(5000); // Give time for async operations to complete
+            Thread.sleep(5000);
 
         } finally {
             if (factory.process != null && factory.process.isAlive()) {

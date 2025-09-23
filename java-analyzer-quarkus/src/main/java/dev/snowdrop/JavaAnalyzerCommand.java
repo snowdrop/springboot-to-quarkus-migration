@@ -1,6 +1,7 @@
 package dev.snowdrop;
 
 import dev.snowdrop.commands.AnalyzeCommand;
+import dev.snowdrop.commands.TransformCommand;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
 import picocli.CommandLine;
 
@@ -10,6 +11,7 @@ import picocli.CommandLine;
     description = "Java Language Server Analyzer",
     subcommands = {
         AnalyzeCommand.class,
+        TransformCommand.class,
         CommandLine.HelpCommand.class
     }
 )

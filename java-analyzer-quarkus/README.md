@@ -12,27 +12,17 @@ First, compile the project
 ./mvnw clean package
 ```
 
-## Download jdt-ls
-
-Download and unzip the Eclipse JDT Language Server:
-
-```shell
-wget https://www.eclipse.org/downloads/download.php?file=/jdtls/milestones/1.50.0/jdt-language-server-1.50.0-202509041425.tar.gz > jdt-language-server-1.50.0.tar.gz
-mkdir jdt-ls
-tar -vxf jdt-language-server-1.50.0.tar.gz -C jdt-ls
-```
-
 ## Konveyor jdt-ls
 
-Alternatively, you can also download and/or use your own server:
+Download the [konveyor language server](https://github.com/konveyor/java-analyzer-bundle) using the following image:
 ```shell
 set VERSION latest
 
 set ID $(podman create --name kantra-download quay.io/konveyor/kantra:$VERSION)
-podman cp $ID:/jdtls ./konveyor-jdtls
+podman cp $ID:/jdtls ./jdt/konveyor-jdtls
 ```
 
-**optional**: Copy the `konveyor-jdtls/java-analyzer-bundle/java-analyzer-bundle.core/target/java-analyzer-bundle.core-1.0.0-SNAPSHOT.jarjava-analyzer-bundle.core-1.0.0-SNAPSHOT.jar` to the `./lib/` of this project to allow maven to load it as it is not published on a maven repository server !
+**optional**: Copy the `konveyor-jdtls/java-analyzer-bundle/java-analyzer-bundle.core/target/java-analyzer-bundle.core-1.0.0-SNAPSHOT.jarjava-analyzer-bundle.core-1.0.0-SNAPSHOT.jar` to the `./lib/` folder of this project to use it as dependency (to access the code) as it is not published on a maven repository server !
 
 ### Trick to path the eclipse osgi server
 
@@ -47,20 +37,46 @@ osgi.bundles=...org.apache.commons.lang3_3.14.0.jar@4,reference\:file\:java-anal
 
 Copy the java-analyzer-bundle.core-1.0.0-SNAPSHOT.jar file from the path `konveyor-jdtls/java-analyzer-bundle/java-analyzer-bundle.core/target/` to the `plugins` folder
 
-## Start the language server and client using Quarkus CLI
+## Download jdt-ls
 
-Before to execute a command (analyze, etc), configure use the CLI arguments or use the Quarkus properties[application.properties](src/main/resources/application.properties) :
+Alternatively, you can also download the [Eclipse JDT Language Server](https://github.com/eclipse-jdtls/eclipse.jdt.ls):
 
 ```shell
-export PARAMS="--jdt-ls-path /PATH/TO/java-analyzer-quarkus/jdt/konveyor-jdtls --jdt-workspace /PATH/TO/java-analyzer-quarkus/jdt -r /PATH/TO/java-analyzer-quarkus/rules"
-mvn quarkus:dev -Dquarkus.args="analyze $PARAMS ./applications/spring-boot-todo-app"
+wget https://www.eclipse.org/downloads/download.php?file=/jdtls/milestones/1.50.0/jdt-language-server-1.50.0-202509041425.tar.gz > jdt-language-server-1.50.0.tar.gz
+mkdir jdt-ls
+tar -vxf jdt-language-server-1.50.0.tar.gz -C jdt-ls
+```
 
-OR
+## Start the language server and client using Quarkus CLI
 
+To execute a command (analyze, etc) using the Quarkus Picocli CLI, execute this command 
+```shell
+Usage: java-analyzer analyze [-v] [--jdt-ls-path=<jdtLsPath>]
+                             [--jdt-workspace=<jdtWorkspace>] [-r=<rulesPath>]
+                             <appPath>
+Analyze a project for migration
+      <appPath>             Path to the Java project to analyze
+      --jdt-ls-path=<jdtLsPath>
+                            Path to JDT-LS installation (default: from config)
+      --jdt-workspace=<jdtWorkspace>
+                            Path to JDT workspace directory (default: from
+                              config)
+  -r, --rules=<rulesPath>   Path to rules directory (default: from config)
+  -v, --verbose             Enable verbose output
+  
+...  
+
+mvn quarkus:dev -Dquarkus.args="analyze --jdt-ls-path /PATH/TO/java-analyzer-quarkus/jdt/konveyor-jdtls --jdt-workspace /PATH/TO/java-analyzer-quarkus/jdt -r /PATH/TO/java-analyzer-quarkus/rules ./applications/spring-boot-todo-app"
+```
+
+To avoid to pass the arguments to the command, you can use the default properties[application.properties](src/main/resources/application.properties) and just pass the path of the application to be analyzed
+
+```shell
 mvn quarkus:dev -Dquarkus.args="analyze ./applications/spring-boot-todo-app"
+```
 
-OR
-
+The command can also be executed using the jar file
+```shell
 java -jar target/quarkus-app/quarkus-run.jar analyze ./applications/spring-boot-todo-app
 ```
 

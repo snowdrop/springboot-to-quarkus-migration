@@ -204,6 +204,7 @@ TO BE CONTINUED !
 
 4. Openrewrite
 
+- In depth covering of openrewrite features: https://github.com/SimonVerhoeven/openrewrite-demo
 - Quarkus 1.x to 2.x: https://docs.openrewrite.org/running-recipes/popular-recipe-guides/quarkus-2.x-migration-from-quarkus-1.x
 - Spring Boot 2.x to 3.x: https://docs.openrewrite.org/running-recipes/popular-recipe-guides/migrate-to-spring-3
 

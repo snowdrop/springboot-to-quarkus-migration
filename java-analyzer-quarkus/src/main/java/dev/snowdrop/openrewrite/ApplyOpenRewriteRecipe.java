@@ -28,7 +28,7 @@ public class ApplyOpenRewriteRecipe {
     public static void main(String[] args) {
 
         String javaFilePath = Optional
-            .ofNullable(System.getProperty("JAVA_FILE_PATH"))
+            .ofNullable(System.getProperty("JAVA_SPRINGBOOT_APPLICATION_FILE_PATH"))
             .orElse("/Users/cmoullia/code/application-modernisation/spring-to-quarkus-guide/java-analyzer-quarkus/applications/spring-boot-todo-app/src/main/java/com/todo/app/AppApplication.java");
 
         String JDT_LS_JSON_RESPONSE = String.format("""

@@ -1,0 +1,5 @@
+---
+type: specs.openrewrite.org/v1beta/category
+name: Spring Boot to Quarkus
+packageName: dev.snowdrop.openrewrite.recipe
+description: Recipes to rewrite Spring Boot to Quarkus.

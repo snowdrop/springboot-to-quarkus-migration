@@ -1,6 +1,6 @@
 package dev.snowdrop.commands;
 
-import dev.snowdrop.openrewrite.recipe.SpringBootToQuarkusRecipe;
+import org.openrewrite.quarkus.spring.ReplaceSpringBootApplicationAnnotationWithQuarkusMain;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 import org.openrewrite.ExecutionContext;
@@ -98,7 +98,7 @@ public class TransformCommand implements Runnable {
             logger.info("--------------------");
         }
 
-        Recipe recipe = new SpringBootToQuarkusRecipe();
+        Recipe recipe = new ReplaceSpringBootApplicationAnnotationWithQuarkusMain();
         J.CompilationUnit transformedCu;
 
         for  (J.CompilationUnit cu : lsts) {

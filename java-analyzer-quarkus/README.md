@@ -103,3 +103,22 @@ Before to run the server and client, configure the following system properties o
 ```shell
 mvn exec:java
 ```
+
+## Tips
+
+Here are the [openrewrite maven plugin command](https://docs.openrewrite.org/reference/rewrite-maven-plugin) to be used to apply recipe(s) top of a spring boot project. Take care that your project is under git control as code will be transformed !
+
+```shell
+cd ./applications/spring-boot-todo-app
+mvn -U org.openrewrite.maven:rewrite-maven-plugin:run \
+   -Drewrite.recipeArtifactCoordinates=dev.snowdrop:java-analyzer-quarkus:1.0.0-SNAPSHOT \
+   -Dorg.openrewrite.quarkus.spring.ReplaceSpringBootApplicationAnnotationWithQuarkusMain
+```
+
+Instead of changing the code, you can use the dryrun mode to get a patch
+```shell
+mvn -U org.openrewrite.maven:rewrite-maven-plugin:dryRun \
+   -Drewrite.recipeArtifactCoordinates=dev.snowdrop:java-analyzer-quarkus:1.0.0-SNAPSHOT \
+   -Drewrite.activeRecipes=org.openrewrite.quarkus.spring.ReplaceSpringBootApplicationAnnotationWithQuarkusMain  
+```
+When done, open the diff patch generated: `/PATH/TO/spring-to-quarkus-guide/java-analyzer-quarkus/applications/spring-boot-todo-app/target/rewrite/rewrite.patch`

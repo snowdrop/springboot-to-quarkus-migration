@@ -211,6 +211,7 @@ public class LsSearchService {
     }
 
     private static void displayResultsTable(Map<String, List<SymbolInformation>> allResults) {
+        // TODO: Test https://github.com/freva/ascii-table to see if the url to the file is not truncated
         AsciiTable at = new AsciiTable();
         at.getContext().setWidth(180); // Set overall table width
         at.addRule();

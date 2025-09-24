@@ -77,17 +77,18 @@ To avoid to pass the arguments to the command, you can use the "default" [applic
 mvn quarkus:dev -Dquarkus.args="analyze ./applications/spring-boot-todo-app"
 ```
 
-The command can also be executed using the jar file
-```shell
-java -jar target/quarkus-app/quarkus-run.jar analyze ./applications/spring-boot-todo-app
-```
-
 You can check the log of the server from the parent folder within: `.jdt_workspace/.metadata/.log` !
 
 ## Transform your application
 
 ```shell
 mvn quarkus:dev -Dquarkus.args="transform ./applications/spring-boot-todo-app"
+```
+
+The commands can also be executed using the jar file
+```shell
+java -jar target/quarkus-app/quarkus-run.jar analyze ./applications/spring-boot-todo-app
+java -jar target/quarkus-app/quarkus-run.jar transform ./applications/spring-boot-todo-app
 ```
 
 ## Start using the JdtlsFactory Main application

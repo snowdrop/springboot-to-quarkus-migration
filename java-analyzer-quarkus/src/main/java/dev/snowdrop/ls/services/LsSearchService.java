@@ -4,6 +4,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
+import de.vandermeer.asciitable.AT_Row;
+import de.vandermeer.asciitable.CWC_FixedWidth;
+import de.vandermeer.skb.interfaces.transformers.textformat.TextAlignment;
 import dev.snowdrop.ls.JdtLsFactory;
 import dev.snowdrop.ls.model.Rule;
 import org.eclipse.lsp4j.ExecuteCommandParams;
@@ -16,19 +19,24 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static dev.snowdrop.ls.utils.RuleUtils.getLocationCode;
 import static dev.snowdrop.ls.utils.RuleUtils.getLocationName;
 import static dev.snowdrop.ls.utils.YamlRuleParser.parseRulesFromFolder;
 
+import de.vandermeer.asciitable.AsciiTable;
+
 public class LsSearchService {
 
     private static final Logger logger = Logger.getLogger(LsSearchService.class);
 
-    public static void executeLsCmd(JdtLsFactory factory, Rule rule) {
+    public static Map<String, List<SymbolInformation>> executeLsCmd(JdtLsFactory factory, Rule rule) {
+        Map<String, List<SymbolInformation>> allResults = new HashMap<>();
 
         // Log the LS Query command to be executed on the LS server
         logger.infof("==== CLIENT: Sending the command '%s' ...", factory.lsCmd);
@@ -36,23 +44,29 @@ public class LsSearchService {
         // Handle three cases: single java.referenced, OR conditions, AND conditions
         if (rule.when().or() != null && !rule.when().or().isEmpty()) {
             logger.infof("Rule When includes: %s between java.referenced", "OR");
-            rule.when().or().forEach(condition ->
-                executeCommandForCondition(factory, rule, condition.javaReferenced())
-            );
+            rule.when().or().forEach(condition -> {
+                Map<String, List<SymbolInformation>> result = executeCommandForCondition(factory, rule, condition.javaReferenced());
+                allResults.putAll(result);
+            });
         } else if (rule.when().and() != null && !rule.when().and().isEmpty()) {
             logger.infof("Rule When includes: %s between java.referenced", "AND");
-            rule.when().and().forEach(condition ->
-                executeCommandForCondition(factory, rule, condition.javaReferenced())
-            );
+            rule.when().and().forEach(condition -> {
+                Map<String, List<SymbolInformation>> result = executeCommandForCondition(factory, rule, condition.javaReferenced());
+                allResults.putAll(result);
+            });
         } else if (rule.when().javaReferenced() != null) {
             logger.infof("Rule When includes: single java.referenced");
-            executeCommandForCondition(factory, rule, rule.when().javaReferenced());
+            Map<String, List<SymbolInformation>> result = executeCommandForCondition(factory, rule, rule.when().javaReferenced());
+            allResults.putAll(result);
         } else {
             logger.warnf("Rule %s has no valid java.referenced conditions", rule.ruleID());
+            allResults.put(rule.ruleID(), new ArrayList<>());
         }
+
+        return allResults;
     }
 
-    private static void executeCommandForCondition(JdtLsFactory factory, Rule rule, Rule.JavaReferenced javaReferenced) {
+    private static Map<String, List<SymbolInformation>> executeCommandForCondition(JdtLsFactory factory, Rule rule, Rule.JavaReferenced javaReferenced) {
         var paramsMap = Map.of(
             "project", "java", // hard coded value to java within the analyzer java external-provider
             "location", getLocationCode(javaReferenced.location()),
@@ -61,16 +75,27 @@ public class LsSearchService {
         );
 
         List<Object> cmdArguments = List.of(paramsMap);
+        Map<String, List<SymbolInformation>> resultMap = new HashMap<>();
 
-        factory.future
-            .thenRunAsync(() -> executeCmd(factory, rule, cmdArguments))
-            .exceptionally(throwable -> {
-                logger.errorf("Error executing LS command for rule %s: %s", rule.ruleID(), throwable.getMessage(), throwable);
-                return null;
-            });
+        try {
+            CompletableFuture<List<SymbolInformation>> symbolsFuture = factory.future
+                .thenApplyAsync(ignored -> executeCmd(factory, rule, cmdArguments))
+                .exceptionally(throwable -> {
+                    logger.errorf("Error executing LS command for rule %s: %s", rule.ruleID(), throwable.getMessage(), throwable);
+                    return new ArrayList<SymbolInformation>();
+                });
+
+            List<SymbolInformation> symbols = symbolsFuture.get(); // Wait for completion
+            resultMap.put(rule.ruleID(), symbols);
+        } catch (InterruptedException | ExecutionException e) {
+            logger.errorf("Failed to execute command for rule %s: %s", rule.ruleID(), e.getMessage());
+            resultMap.put(rule.ruleID(), new ArrayList<>());
+        }
+
+        return resultMap;
     }
 
-    public static void executeCmd(JdtLsFactory factory, Rule rule, List<Object> arguments) {
+    public static List<SymbolInformation> executeCmd(JdtLsFactory factory, Rule rule, List<Object> arguments) {
         List<Object> cmdArguments = (arguments != null && !arguments.isEmpty())
             ? arguments
             : Collections.EMPTY_LIST;
@@ -154,7 +179,7 @@ public class LsSearchService {
                 Map<String, Object> args = (Map<String, Object>) arguments.get(0);
                 logger.infof("==== CLIENT: Found %s usage(s) of symbol: %s, name: %s", symbolInformationList.size(), getLocationName(args.get("location").toString()),args.get("query"));
                 for (SymbolInformation si : symbolInformationList) {
-                    logger.infof("==== CLIENT: Found %s at line %s, char: %s - %s within the file: %s)",
+                    logger.debugf("==== CLIENT: Found %s at line %s, char: %s - %s within the file: %s)",
                         si.getName(),
                         si.getLocation().getRange().getStart().getLine() + 1,
                         si.getLocation().getRange().getStart().getCharacter(),
@@ -167,13 +192,81 @@ public class LsSearchService {
         } else {
             logger.warn("==== CLIENT: Received null result for command.");
         }
+
+        return symbolInformationList;
     }
 
     public static void analyzeCodeFromRule(JdtLsFactory factory) throws IOException {
         List<Rule> rules = parseRulesFromFolder(factory.rulesPath);
+        Map<String, List<SymbolInformation>> allResults = new HashMap<>();
+
+        // Collect all results from all rules
         for (Rule rule : rules) {
-            executeLsCmd( factory, rule);
+            Map<String, List<SymbolInformation>> ruleResults = executeLsCmd(factory, rule);
+            allResults.putAll(ruleResults);
         }
+
+        // Display beautiful table of results
+        displayResultsTable(allResults);
+    }
+
+    private static void displayResultsTable(Map<String, List<SymbolInformation>> allResults) {
+        AsciiTable at = new AsciiTable();
+        at.getContext().setWidth(180); // Set overall table width
+        at.addRule();
+
+        AT_Row row;
+        row = at.addRow("Rule ID", "Found", "Information Details");
+        row.getCells().get(0).getContext().setTextAlignment(TextAlignment.CENTER);
+        row.getCells().get(1).getContext().setTextAlignment(TextAlignment.CENTER);
+        row.getCells().get(2).getContext().setTextAlignment(TextAlignment.CENTER);
+
+        at.addRule();
+        at.getRenderer().setCWC(new CWC_FixedWidth().add(45).add(5).add(130));
+
+        for (Map.Entry<String, List<SymbolInformation>> entry : allResults.entrySet()) {
+            String ruleId = entry.getKey();
+            List<SymbolInformation> symbols = entry.getValue();
+            String hasResults = symbols.isEmpty() ? "No" : "Yes";
+
+            if (symbols.isEmpty()) {
+                row = at.addRow(ruleId, hasResults, "No symbols found");
+                row.getCells().get(0).getContext().setTextAlignment(TextAlignment.LEFT);
+                row.getCells().get(1).getContext().setTextAlignment(TextAlignment.CENTER);
+                row.getCells().get(2).getContext().setTextAlignment(TextAlignment.LEFT);
+            } else {
+                // Add first symbol
+                SymbolInformation firstSymbol = symbols.get(0);
+                String firstSymbolDetails = formatSymbolInformation(firstSymbol);
+                row = at.addRow(ruleId, hasResults, firstSymbolDetails + "\n" + symbols.get(0).getLocation().getUri());
+                row.getCells().get(0).getContext().setTextAlignment(TextAlignment.LEFT);
+                row.getCells().get(1).getContext().setTextAlignment(TextAlignment.CENTER);
+                row.getCells().get(2).getContext().setTextAlignment(TextAlignment.LEFT);
+
+                // Add additional symbols in subsequent rows with empty rule id and found columns
+                for (int i = 1; i < symbols.size(); i++) {
+                    String symbolDetails = formatSymbolInformation(symbols.get(i));
+                    row = at.addRow("", "", symbolDetails + "\n" + symbols.get(0).getLocation().getUri());
+                    row.getCells().get(0).getContext().setTextAlignment(TextAlignment.LEFT);
+                    row.getCells().get(1).getContext().setTextAlignment(TextAlignment.CENTER);
+                    row.getCells().get(2).getContext().setTextAlignment(TextAlignment.LEFT);
+                }
+            }
+            at.addRule();
+        }
+
+        // Use System.out.println instead of logger to avoid log formatting
+        System.out.println("\n=== Code Analysis Results ===");
+        System.out.println(at.render());
+    }
+
+    private static String formatSymbolInformation(SymbolInformation si) {
+        return String.format("Found %s at line %s, char: %s - %s",
+            si.getName(),
+            si.getLocation().getRange().getStart().getLine() + 1,
+            si.getLocation().getRange().getStart().getCharacter(),
+            si.getLocation().getRange().getEnd().getCharacter()
+        );
     }
 
 }

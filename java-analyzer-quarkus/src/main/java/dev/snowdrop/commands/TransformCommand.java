@@ -75,13 +75,12 @@ public class TransformCommand implements Runnable {
             throw new IllegalStateException("No Java files found in the project !");
         }
 
-        // Use JavaParser to parse discovered Java files
-        JavaParser javaParser = JavaParser.fromJavaVersion().build();
-
         // Parse all discovered Java files
-        List<J.CompilationUnit> lsts = javaParser.parse(javaFiles, null, ctx)
-        .filter(sourceFile -> sourceFile instanceof J.CompilationUnit)
-        .map(sourceFile -> (J.CompilationUnit) sourceFile)
+        List<J.CompilationUnit> lsts = JavaParser.fromJavaVersion()
+            .build()
+            .parse(javaFiles, null, ctx)
+            .filter(sourceFile -> sourceFile instanceof J.CompilationUnit)
+            .map(sourceFile -> (J.CompilationUnit) sourceFile)
         .toList();
 
         logger.infof("✅ Successfully parsed %d Java source files into LSTs.", lsts.size());

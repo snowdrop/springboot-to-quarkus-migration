@@ -1,4 +1,6 @@
-# Instructions to play with Eclipse JDT-LS & the LS client
+# Instructions to analyze a java application and transform it
+
+TODO: To be rephrased as we have expanded the scope !
 
 This project demonstrates how to launch the Eclipse Java Language Server (aka: Eclipse jdt-ls) and access it using a Java Language client able to pass commands and get JSON responses converted to objects
 
@@ -69,7 +71,7 @@ Analyze a project for migration
 mvn quarkus:dev -Dquarkus.args="analyze --jdt-ls-path /PATH/TO/java-analyzer-quarkus/jdt/konveyor-jdtls --jdt-workspace /PATH/TO/java-analyzer-quarkus/jdt -r /PATH/TO/java-analyzer-quarkus/rules ./applications/spring-boot-todo-app"
 ```
 
-To avoid to pass the arguments to the command, you can use the default properties[application.properties](src/main/resources/application.properties) and just pass the path of the application to be analyzed
+To avoid to pass the arguments to the command, you can use the "default" [application.properties](src/main/resources/application.properties) and just pass the path of the application to be analyzed
 
 ```shell
 mvn quarkus:dev -Dquarkus.args="analyze ./applications/spring-boot-todo-app"
@@ -81,6 +83,12 @@ java -jar target/quarkus-app/quarkus-run.jar analyze ./applications/spring-boot-
 ```
 
 You can check the log of the server from the parent folder within: `.jdt_workspace/.metadata/.log` !
+
+## Transform your application
+
+```shell
+mvn quarkus:dev -Dquarkus.args="transform ./applications/spring-boot-todo-app"
+```
 
 ## Start using the JdtlsFactory Main application
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import dev.snowdrop.openrewrite.model.Result;
+import dev.snowdrop.openrewrite.recipe.SpringBootToQuarkusRecipe;
 import org.eclipse.lsp4j.SymbolKind;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.InMemoryExecutionContext;

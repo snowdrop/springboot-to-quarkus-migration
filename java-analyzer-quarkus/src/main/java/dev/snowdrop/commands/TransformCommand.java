@@ -1,6 +1,6 @@
 package dev.snowdrop.commands;
 
-import dev.snowdrop.openrewrite.SpringBootToQuarkusRecipe;
+import dev.snowdrop.openrewrite.recipe.SpringBootToQuarkusRecipe;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 import org.openrewrite.ExecutionContext;
@@ -13,6 +13,8 @@ import picocli.CommandLine;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -61,6 +63,8 @@ public class TransformCommand implements Runnable {
      *
      */
     private void startTransformation() {
+        Instant start = Instant.now();
+
         Path projectPath = resolvePath(appPath);
         logger.infof("✅ Starting OpenRewrite parsing for project at: %s", projectPath);
 
@@ -106,14 +110,20 @@ public class TransformCommand implements Runnable {
             }
 
             if (transformedCu == cu) {
-                System.out.println("Recipe did not make any changes.");
+                logger.info("Recipe did not make any changes.");
             } else {
                 String transformedCode = transformedCu.printAll();
-                System.out.println("--- SOURCE CODE AFTER TRANSFORMATION ---");
-                System.out.println(transformedCode);
-                System.out.println("----------------------------------------");
+                logger.info("--- SOURCE CODE AFTER TRANSFORMATION ---");
+                logger.info(transformedCode);
+                logger.info("----------------------------------------");
             }
         }
+
+        Instant finish = Instant.now();
+        long timeElapsed = Duration.between(start, finish).toMillis();
+        logger.info("----------------------------------------");
+        logger.info("--- Elapsed time: " + timeElapsed + " ms ---");
+        logger.info("----------------------------------------");
     }
 
     /**

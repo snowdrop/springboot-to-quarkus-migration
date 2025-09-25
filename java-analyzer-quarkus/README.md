@@ -137,3 +137,13 @@ mvn -U org.openrewrite.maven:rewrite-maven-plugin:dryRun \
   -Drewrite.configLocation=/PATH/TO/spring-to-quarkus-guide/java-analyzer-quarkus/recipes/clean-code.yml
 ```
 
+To execute several recipes aggregated in a yaml file placed at the root of the project, execute this command:
+```shell
+mvn -U org.openrewrite.maven:rewrite-maven-plugin:dryRun \
+  -Drewrite.activeRecipes=dev.snowdrop.text.SearchText,dev.snowdrop.java.StandardJavaConventions,dev.snowdrop.java.spring.SearchSpringBootAnnotation \
+  -Drewrite.recipeArtifactCoordinates=org.openrewrite:rewrite-java:8.61.1 \
+  -Drewrite.recipeArtifactCoordinates=dev.snowdrop:java-analyzer-quarkus:1.0.0-SNAPSHOT \
+  -Drewrite.exportDatatables=true \
+  -Drewrite.configLocation=my-rewrite.yml
+```
+

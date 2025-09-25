@@ -36,11 +36,11 @@ name: dev.snowdrop.java.spring.SearchSpringBootAnnotation
 displayName: Search about Spring Boot Annotation(s)
 description: A recipe to search about Spring Boot Annotation(s) and generate a search result report
 
-#preconditions:
-#  - org.openrewrite.maven.search.ParentPomInsight:
-#      groupIdPattern: org.springframework.boot
-#      artifactIdPattern: spring-boot-starter-parent
-#      version: 3.x
+preconditions:
+  - org.openrewrite.java.dependencies.search.ModuleHasDependency:
+      groupIdPattern: org.springframework.boot
+      artifactIdPattern: spring-boot
+      version: '[3.5,)'
 
 recipeList:
   - org.openrewrite.quarkus.spring.ReplaceSpringBootApplicationAnnotationWithQuarkusMain

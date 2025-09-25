@@ -79,6 +79,13 @@ mvn quarkus:dev -Dquarkus.args="analyze ./applications/spring-boot-todo-app"
 
 You can check the log of the server from the parent folder within: `.jdt_workspace/.metadata/.log` !
 
+If you want to populate an analysis report (kind of migration) then add the parameter `-o json` and a json file having as
+name: `analysing-report_yyyy-mm-dd_hh:mm.json` will be generated within the project scanned
+
+```shell
+mvn quarkus:dev -Dquarkus.args="analyze ./applications/spring-boot-todo-app o json"
+```
+
 ## Transform your application
 
 ```shell

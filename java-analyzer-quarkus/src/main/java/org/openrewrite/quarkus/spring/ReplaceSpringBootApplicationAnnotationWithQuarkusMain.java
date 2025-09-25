@@ -20,12 +20,14 @@ public class ReplaceSpringBootApplicationAnnotationWithQuarkusMain extends Recip
         return "Convert @SpringBootApplication with @QuarkusMain Annotation, removes the old import and add the new one.";
     }
 
+    transient SpringBootScanReport report = new SpringBootScanReport(this);
+
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
         return new SpringBootToQuarkusMainVisitor();
     }
 
-    private static class SpringBootToQuarkusMainVisitor extends JavaIsoVisitor<ExecutionContext> {
+    private class SpringBootToQuarkusMainVisitor extends JavaIsoVisitor<ExecutionContext> {
 
         @Override
         public J.CompilationUnit visitCompilationUnit(J.CompilationUnit cu, ExecutionContext ctx) {
@@ -38,6 +40,9 @@ public class ReplaceSpringBootApplicationAnnotationWithQuarkusMain extends Recip
             String simpleName = a.getSimpleName();
 
             if ("SpringBootApplication".equals(simpleName)) {
+
+                report.insertRow(ctx,new SpringBootScanReport.Row(simpleName,"123"));
+
                 maybeRemoveImport("org.springframework.boot.autoconfigure.SpringBootApplication");
                 maybeRemoveImport("org.springframework.boot.SpringApplication");
                 maybeAddImport("io.quarkus.runtime.annotations.QuarkusMain");

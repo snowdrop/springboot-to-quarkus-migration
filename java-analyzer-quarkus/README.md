@@ -129,3 +129,11 @@ mvn -U org.openrewrite.maven:rewrite-maven-plugin:dryRun \
    -Drewrite.activeRecipes=org.openrewrite.quarkus.spring.ReplaceSpringBootApplicationAnnotationWithQuarkusMain  
 ```
 When done, open the diff patch generated: `/PATH/TO/spring-to-quarkus-guide/java-analyzer-quarkus/applications/spring-boot-todo-app/target/rewrite/rewrite.patch`
+
+You can play with your own recipes and by example clean the imports and add an apache license header using the following command:
+```shell
+mvn -U org.openrewrite.maven:rewrite-maven-plugin:dryRun \
+  -Drewrite.activeRecipes=com.mycompany.recipes.StandardJavaConventions \
+  -Drewrite.configLocation=/PATH/TO/spring-to-quarkus-guide/java-analyzer-quarkus/recipes/clean-code.yml
+```
+

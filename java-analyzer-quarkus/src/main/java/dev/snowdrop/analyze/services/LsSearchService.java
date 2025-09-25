@@ -1,4 +1,4 @@
-package dev.snowdrop.ls.services;
+package dev.snowdrop.analyze.services;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -7,8 +7,9 @@ import com.google.gson.reflect.TypeToken;
 import de.vandermeer.asciitable.AT_Row;
 import de.vandermeer.asciitable.CWC_FixedWidth;
 import de.vandermeer.skb.interfaces.transformers.textformat.TextAlignment;
-import dev.snowdrop.ls.JdtLsFactory;
-import dev.snowdrop.ls.model.Rule;
+import dev.snowdrop.analyze.JdtLsFactory;
+import dev.snowdrop.analyze.model.MigrationTask;
+import dev.snowdrop.analyze.model.Rule;
 import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.SymbolInformation;
@@ -25,9 +26,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static dev.snowdrop.ls.utils.RuleUtils.getLocationCode;
-import static dev.snowdrop.ls.utils.RuleUtils.getLocationName;
-import static dev.snowdrop.ls.utils.YamlRuleParser.parseRulesFromFolder;
+import static dev.snowdrop.analyze.utils.RuleUtils.getLocationCode;
+import static dev.snowdrop.analyze.utils.RuleUtils.getLocationName;
+import static dev.snowdrop.analyze.utils.YamlRuleParser.parseRulesFromFolder;
 
 import de.vandermeer.asciitable.AsciiTable;
 
@@ -36,7 +37,7 @@ public class LsSearchService {
     private static final Logger logger = Logger.getLogger(LsSearchService.class);
 
     public static Map<String, List<SymbolInformation>> executeLsCmd(JdtLsFactory factory, Rule rule) {
-        Map<String, List<SymbolInformation>> allResults = new HashMap<>();
+        Map<String, List<SymbolInformation>> ruleResults = new HashMap<>();
 
         // Log the LS Query command to be executed on the LS server
         logger.infof("==== CLIENT: Sending the command '%s' ...", factory.lsCmd);
@@ -45,28 +46,28 @@ public class LsSearchService {
         if (rule.when().or() != null && !rule.when().or().isEmpty()) {
             logger.infof("Rule When includes: %s between java.referenced", "OR");
             rule.when().or().forEach(condition -> {
-                Map<String, List<SymbolInformation>> result = executeCommandForCondition(factory, rule, condition.javaReferenced());
-                allResults.putAll(result);
+                List<SymbolInformation> results = executeCommandForCondition(factory, rule, condition.javaReferenced());
+                ruleResults.putAll(Map.of(rule.ruleID(),results));
             });
         } else if (rule.when().and() != null && !rule.when().and().isEmpty()) {
             logger.infof("Rule When includes: %s between java.referenced", "AND");
             rule.when().and().forEach(condition -> {
-                Map<String, List<SymbolInformation>> result = executeCommandForCondition(factory, rule, condition.javaReferenced());
-                allResults.putAll(result);
+                List<SymbolInformation> results = executeCommandForCondition(factory, rule, condition.javaReferenced());
+                ruleResults.putAll(Map.of(rule.ruleID(),results));
             });
         } else if (rule.when().javaReferenced() != null) {
             logger.infof("Rule When includes: single java.referenced");
-            Map<String, List<SymbolInformation>> result = executeCommandForCondition(factory, rule, rule.when().javaReferenced());
-            allResults.putAll(result);
+            List<SymbolInformation> results = executeCommandForCondition(factory, rule, rule.when().javaReferenced());
+            ruleResults.putAll(Map.of(rule.ruleID(),results));
         } else {
             logger.warnf("Rule %s has no valid java.referenced conditions", rule.ruleID());
-            allResults.put(rule.ruleID(), new ArrayList<>());
+            ruleResults.put(rule.ruleID(), new ArrayList<>());
         }
 
-        return allResults;
+        return ruleResults;
     }
 
-    private static Map<String, List<SymbolInformation>> executeCommandForCondition(JdtLsFactory factory, Rule rule, Rule.JavaReferenced javaReferenced) {
+    private static List<SymbolInformation> executeCommandForCondition(JdtLsFactory factory, Rule rule, Rule.JavaReferenced javaReferenced) {
         var paramsMap = Map.of(
             "project", "java", // hard coded value to java within the analyzer java external-provider
             "location", getLocationCode(javaReferenced.location()),
@@ -75,7 +76,6 @@ public class LsSearchService {
         );
 
         List<Object> cmdArguments = List.of(paramsMap);
-        Map<String, List<SymbolInformation>> resultMap = new HashMap<>();
 
         try {
             CompletableFuture<List<SymbolInformation>> symbolsFuture = factory.future
@@ -85,14 +85,11 @@ public class LsSearchService {
                     return new ArrayList<SymbolInformation>();
                 });
 
-            List<SymbolInformation> symbols = symbolsFuture.get(); // Wait for completion
-            resultMap.put(rule.ruleID(), symbols);
+            return symbolsFuture.get(); // Wait for completion
         } catch (InterruptedException | ExecutionException e) {
             logger.errorf("Failed to execute command for rule %s: %s", rule.ruleID(), e.getMessage());
-            resultMap.put(rule.ruleID(), new ArrayList<>());
+            return null;
         }
-
-        return resultMap;
     }
 
     public static List<SymbolInformation> executeCmd(JdtLsFactory factory, Rule rule, List<Object> arguments) {
@@ -121,7 +118,6 @@ public class LsSearchService {
             logger.infof("==== CLIENT: --- Search Results found for rule: %s.", rule.ruleID());
             logger.infof("==== CLIENT: --- JSON response: %s",gson.toJson(result));
 
-            // Following the Konveyor approach to create SymbolInformation objects
             try {
                 if (result instanceof List) {
                     List<?> resultList = (List<?>) result;
@@ -196,21 +192,28 @@ public class LsSearchService {
         return symbolInformationList;
     }
 
-    public static void analyzeCodeFromRule(JdtLsFactory factory) throws IOException {
+    public static Map<String, MigrationTask> analyzeCodeFromRule(JdtLsFactory factory) throws IOException {
         List<Rule> rules = parseRulesFromFolder(factory.rulesPath);
-        Map<String, List<SymbolInformation>> allResults = new HashMap<>();
+        Map<String, MigrationTask> ruleMigrationTasks = new HashMap<>();
 
-        // Collect all results from all rules
+        // Collect all results from all the rule's queries executed
         for (Rule rule : rules) {
             Map<String, List<SymbolInformation>> ruleResults = executeLsCmd(factory, rule);
-            allResults.putAll(ruleResults);
+            ruleMigrationTasks.putAll(Map.of(
+                rule.ruleID(),
+                new MigrationTask()
+                    .withRule(rule)
+                    .withResults(ruleResults.get(rule.ruleID()))
+                    ));
         }
 
-        // Display beautiful table of results
-        displayResultsTable(allResults);
+        // Display the rule queries results
+        displayResultsTable(ruleMigrationTasks);
+
+        return ruleMigrationTasks;
     }
 
-    private static void displayResultsTable(Map<String, List<SymbolInformation>> allResults) {
+    private static void displayResultsTable(Map<String, MigrationTask> results) {
         // TODO: Test https://github.com/freva/ascii-table to see if the url to the file is not truncated
         AsciiTable at = new AsciiTable();
         at.getContext().setWidth(180); // Set overall table width
@@ -225,29 +228,30 @@ public class LsSearchService {
         at.addRule();
         at.getRenderer().setCWC(new CWC_FixedWidth().add(45).add(5).add(130));
 
-        for (Map.Entry<String, List<SymbolInformation>> entry : allResults.entrySet()) {
+        for (Map.Entry<String, MigrationTask> entry : results.entrySet()) {
             String ruleId = entry.getKey();
-            List<SymbolInformation> symbols = entry.getValue();
-            String hasResults = symbols.isEmpty() ? "No" : "Yes";
+            MigrationTask aTask = entry.getValue();
+            List<SymbolInformation> queryResults = aTask.getResults();
+            String hasQueryResults = queryResults.isEmpty() ? "No" : "Yes";
 
-            if (symbols.isEmpty()) {
-                row = at.addRow(ruleId, hasResults, "No symbols found");
+            if (queryResults.isEmpty()) {
+                row = at.addRow(ruleId, hasQueryResults, "No symbols found");
                 row.getCells().get(0).getContext().setTextAlignment(TextAlignment.LEFT);
                 row.getCells().get(1).getContext().setTextAlignment(TextAlignment.CENTER);
                 row.getCells().get(2).getContext().setTextAlignment(TextAlignment.LEFT);
             } else {
                 // Add first symbol
-                SymbolInformation firstSymbol = symbols.get(0);
+                SymbolInformation firstSymbol = queryResults.get(0);
                 String firstSymbolDetails = formatSymbolInformation(firstSymbol);
-                row = at.addRow(ruleId, hasResults, firstSymbolDetails + "\n" + symbols.get(0).getLocation().getUri());
+                row = at.addRow(ruleId, hasQueryResults, firstSymbolDetails + "\n" + queryResults.get(0).getLocation().getUri());
                 row.getCells().get(0).getContext().setTextAlignment(TextAlignment.LEFT);
                 row.getCells().get(1).getContext().setTextAlignment(TextAlignment.CENTER);
                 row.getCells().get(2).getContext().setTextAlignment(TextAlignment.LEFT);
 
                 // Add additional symbols in subsequent rows with empty rule id and found columns
-                for (int i = 1; i < symbols.size(); i++) {
-                    String symbolDetails = formatSymbolInformation(symbols.get(i));
-                    row = at.addRow("", "", symbolDetails + "\n" + symbols.get(0).getLocation().getUri());
+                for (int i = 1; i < queryResults.size(); i++) {
+                    String symbolDetails = formatSymbolInformation(queryResults.get(i));
+                    row = at.addRow("", "", symbolDetails + "\n" + queryResults.get(0).getLocation().getUri());
                     row.getCells().get(0).getContext().setTextAlignment(TextAlignment.LEFT);
                     row.getCells().get(1).getContext().setTextAlignment(TextAlignment.CENTER);
                     row.getCells().get(2).getContext().setTextAlignment(TextAlignment.LEFT);

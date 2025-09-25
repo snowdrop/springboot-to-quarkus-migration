@@ -18,7 +18,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static dev.snowdrop.ls.utils.FileUtils.resolvePath;
+import static dev.snowdrop.analyze.utils.FileUtils.resolvePath;
 
 @CommandLine.Command(
     name = "transform",

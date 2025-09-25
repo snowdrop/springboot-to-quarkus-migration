@@ -1,9 +1,11 @@
-package dev.snowdrop.ls.model;
+package dev.snowdrop.analyze.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record Rule(
     String category,
     @JsonProperty("customVariables") List<String> customVariables,
@@ -15,13 +17,11 @@ public record Rule(
     String ruleID,
     String lsCmd,
     When when,
-    @JsonProperty("actions") List<String> actions
+    @Deprecated @JsonProperty("actions") List<String> actions,
+    List<String> instructions
 ) {
 
-    public Rule withLsCmd(String lsCmd) {
-        return new Rule(category, customVariables, description, effort, labels, links, message, ruleID, lsCmd, when, actions);
-    }
-
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public record When(
         @JsonProperty("java.referenced")
         JavaReferenced javaReferenced,
@@ -31,6 +31,7 @@ public record Rule(
         List<Condition> and
     ) {}
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public record Condition(
         @JsonProperty("java.dependency")
         JavaDependency javaDependency,
@@ -43,6 +44,7 @@ public record Rule(
         String ignore
     ) {}
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public record JavaReferenced(
         String location,
         String pattern,
@@ -50,16 +52,19 @@ public record Rule(
         String annotated
     ) {}
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public record Annotated(
         String pattern,
         List<Element> elements
     ) {}
-    
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public record Element(
         String name,
         String value
     ) {}
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public record JavaDependency(
         String lowerbound,
         String upperbound,

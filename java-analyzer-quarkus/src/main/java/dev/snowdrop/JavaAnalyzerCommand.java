@@ -1,14 +1,13 @@
 package dev.snowdrop;
 
-import dev.snowdrop.commands.AnalyzeCommand;
-import dev.snowdrop.commands.TransformCommand;
+import dev.snowdrop.commands.*;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
 import picocli.CommandLine;
 
 @TopCommand
 @CommandLine.Command(
-    name = "java-analyzer",
-    description = "Java Language Server Analyzer",
+    name = "quarkus-analyzer",
+    description = "Quarkus CLI Analyzer",
     subcommands = {
         AnalyzeCommand.class,
         TransformCommand.class,

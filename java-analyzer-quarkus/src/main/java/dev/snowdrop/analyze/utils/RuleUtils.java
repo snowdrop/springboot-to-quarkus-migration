@@ -1,6 +1,6 @@
-package dev.snowdrop.ls.utils;
+package dev.snowdrop.analyze.utils;
 
-import dev.snowdrop.ls.model.Rule;
+import dev.snowdrop.analyze.model.Rule;
 import org.jboss.logging.Logger;
 
 import java.io.File;

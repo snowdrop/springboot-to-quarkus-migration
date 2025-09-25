@@ -1,4 +1,4 @@
-package dev.snowdrop.ls.model;
+package dev.snowdrop.analyze.model;
 
 import io.smallrye.config.ConfigMapping;
 

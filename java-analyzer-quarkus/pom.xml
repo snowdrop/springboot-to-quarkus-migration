@@ -172,7 +172,7 @@
                     <execution>
                         <id>default</id>
                         <configuration>
-                            <mainClass>dev.snowdrop.ls.JdtLsFactory</mainClass>
+                            <mainClass>dev.snowdrop.analyze.JdtLsFactory</mainClass>
                         </configuration>
                     </execution>
                     <execution>

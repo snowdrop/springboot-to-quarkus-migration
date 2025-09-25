@@ -1,9 +1,9 @@
-package dev.snowdrop.ls;
+package dev.snowdrop.analyze;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import dev.snowdrop.commands.AnalyzeCommand;
-import dev.snowdrop.ls.utils.LSClient;
+import dev.snowdrop.analyze.utils.LSClient;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.lsp4j.ClientCapabilities;
 import org.eclipse.lsp4j.InitializeParams;
@@ -27,8 +27,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static dev.snowdrop.ls.services.LsSearchService.analyzeCodeFromRule;
-import static dev.snowdrop.ls.utils.FileUtils.resolvePath;
+import static dev.snowdrop.analyze.services.LsSearchService.analyzeCodeFromRule;
+import static dev.snowdrop.analyze.utils.FileUtils.resolvePath;
 
 @ApplicationScoped
 public class JdtLsFactory {

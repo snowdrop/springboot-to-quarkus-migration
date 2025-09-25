@@ -1,15 +1,24 @@
 package dev.snowdrop.commands;
 
-import dev.snowdrop.ls.JdtLsFactory;
+import dev.snowdrop.analyze.JdtLsFactory;
+import dev.snowdrop.analyze.model.MigrationTask;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import java.util.Map;
 
-import static dev.snowdrop.ls.services.LsSearchService.analyzeCodeFromRule;
+import static dev.snowdrop.analyze.services.LsSearchService.analyzeCodeFromRule;
 
 @CommandLine.Command(
     name = "analyze",
@@ -58,6 +67,12 @@ public class AnalyzeCommand implements Runnable {
     )
     private boolean verbose;
 
+    @CommandLine.Option(
+        names = {"-o","--output"},
+        description = "Export the analysing result as json format"
+    )
+    private String output;
+
     @Override
     public void run() {
         Path path = Paths.get(appPath);
@@ -93,9 +108,14 @@ public class AnalyzeCommand implements Runnable {
         logger.infof("📋 LS_CMD set to: %s", factory.lsCmd);
 
         try {
-            analyzeCodeFromRule(factory);
+            Map<String, MigrationTask> analyzeReport = analyzeCodeFromRule(factory);
 
-            logger.infof("⏳ Waiting for LS commands to complete...");
+            // Export migration tasks as JSON if requested
+            if (output != null && output.equals("json")) {
+                exportAsJson(analyzeReport);
+            }
+
+            logger.infof("⏳ Waiting for commands to complete...");
             Thread.sleep(5000);
 
         } finally {
@@ -105,4 +125,46 @@ public class AnalyzeCommand implements Runnable {
             }
         }
     }
+
+    private void exportAsJson(Map<String, MigrationTask> analyzeReport) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss").withLocale(Locale.getDefault());
+            String dateTimeformated = LocalDateTime.now().format(formatter);
+
+            MigrationTasksExport exportData = new MigrationTasksExport(
+                "Migration Analysis Results",
+                appPath,
+                dateTimeformated,
+                analyzeReport
+            );
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+            File outputFile = new File(String.format("%s/%s_%s.json", appPath, "analysing-report",dateTimeformated));
+
+            // Ensure parent directory exists
+            if (outputFile.getParentFile() != null) {
+                outputFile.getParentFile().mkdirs();
+            }
+
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(outputFile, exportData);
+            logger.infof("📄 Migration tasks exported to: %s", outputFile);
+
+        } catch (IOException e) {
+            logger.errorf("❌ Failed to export migration tasks to JSON: %s", e.getMessage());
+            if (verbose) {
+                logger.error("Export error details:", e);
+            }
+        }
+    }
+
+    // Data structure for JSON export
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public record MigrationTasksExport(
+        String title,
+        String projectPath,
+        String timestamp,
+        Map<String, MigrationTask> migrationTasks
+    ) {}
 }

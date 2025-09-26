@@ -28,8 +28,7 @@ TODO: Add link to the documentation of the Migration tool explaining what todo, 
 
 ## How to test and debug the rules
 
-This project provides a Quarkus CLI application able to analyze a java project and to validate it against the rules created.
-Look to the [README](lsp/README.md) of the lsp project to play with it !
+This project provides a Quarkus CLI application able to analyze and transform a java Spring Boot project and to validate it against the rules created.
 
 ## Migration path
 

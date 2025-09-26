@@ -28,7 +28,7 @@ TODO: Add link to the documentation of the Migration tool explaining what todo, 
 
 ## How to test and debug the rules
 
-This project provides a Quarkus CLI application able to analyze and transform a java Spring Boot project and to validate it against the rules created.
+This guide can be tested and validated using the following [Migration Tool project](https://github.com/snowdrop/migration-tool) :-)
 
 ## Migration path
 
